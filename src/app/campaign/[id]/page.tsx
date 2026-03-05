@@ -1,67 +1,100 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { JsonRpcProvider } from "ethers";
 import { useWallet } from "@/components/WalletProvider";
+import { getCampaignById, donateToCampaign, CampaignDisplay, CONTRACT_ADDRESS } from "@/lib/contract";
 
-// Demo campaign data (will be replaced by on-chain reads)
-const demoCampaigns: Record<string, any> = {
-    "0": {
-        title: "Computer Science Degree — Final Year Tuition",
-        description:
-            "I'm a senior CS student at Istanbul Technical University and need help covering my last semester tuition. I've maintained a 3.8 GPA and have been building on Avalanche for the past year. Every AVAX gets me closer to graduation and launching my Web3 career full-time. I plan to contribute back to the Avalanche ecosystem by building open-source developer tools.",
-        category: "Tuition",
-        goalAvax: "50.00",
-        raisedAvax: "32.50",
-        donorCount: 14,
-        progress: 65,
-        deadline: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000),
-        student: "0x1a2B3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9a0B",
-    },
-    "1": {
-        title: "Medical Research Books & Lab Equipment",
-        description:
-            "I'm pursuing a master's in biomedical engineering at Boğaziçi University. I need funds for specialized textbooks and lab materials not covered by my scholarship. My research focuses on affordable diagnostic tools for developing countries. The funds will cover: 3 advanced textbooks ($200), lab equipment rental ($400), and research publication fees ($200).",
-        category: "Research",
-        goalAvax: "25.00",
-        raisedAvax: "18.75",
-        donorCount: 9,
-        progress: 75,
-        deadline: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
-        student: "0x2B3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9a0B1C",
-    },
-    "2": {
-        title: "Blockchain Development Bootcamp Scholarship",
-        description:
-            "Self-taught developer from Ankara seeking funding for a professional blockchain development bootcamp. I've been coding for 2 years and want to transition into Web3 full-time. I will build my first dApp on Avalanche during the bootcamp and contribute to open-source projects in the ecosystem.",
-        category: "Technology",
-        goalAvax: "15.00",
-        raisedAvax: "3.20",
-        donorCount: 4,
-        progress: 21,
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        student: "0x3c4D5e6F7a8B9c0D1e2F3a4B5c6D7e8F9a0B1C2D",
-    },
+const FUJI_RPC = "https://api.avax-test.network/ext/bc/C/rpc";
+
+const categoryIcons: Record<string, string> = {
+    Tuition: "🎓",
+    Books: "📚",
+    Research: "🔬",
+    Housing: "🏠",
+    Technology: "💻",
+    Other: "✨",
 };
+
+const quickAmounts = ["1", "5", "10", "25"];
 
 export default function CampaignDetailPage() {
     const params = useParams();
-    const id = params.id as string;
+    const id = Number(params.id);
     const { signer, isConnected, connect } = useWallet();
+
+    const [campaign, setCampaign] = useState<CampaignDisplay | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
+
     const [donateAmount, setDonateAmount] = useState("");
     const [isDonating, setIsDonating] = useState(false);
+    const [txHash, setTxHash] = useState<string | null>(null);
+    const [donateError, setDonateError] = useState<string | null>(null);
 
-    const campaign = demoCampaigns[id];
+    async function loadCampaign() {
+        try {
+            setLoading(true);
+            const provider = new JsonRpcProvider(FUJI_RPC);
+            const data = await getCampaignById(provider, id);
+            setCampaign(data);
+        } catch {
+            setNotFound(true);
+        } finally {
+            setLoading(false);
+        }
+    }
 
-    if (!campaign) {
+    useEffect(() => {
+        if (!isNaN(id)) loadCampaign();
+        else setNotFound(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
+
+    const handleDonate = async () => {
+        if (!isConnected || !signer) {
+            await connect();
+            return;
+        }
+        if (!donateAmount || parseFloat(donateAmount) <= 0) {
+            setDonateError("Please enter a valid amount.");
+            return;
+        }
+        try {
+            setIsDonating(true);
+            setDonateError(null);
+            setTxHash(null);
+            const receipt = await donateToCampaign(signer, id, donateAmount);
+            setTxHash(receipt.hash);
+            setDonateAmount("");
+            // Reload campaign to reflect updated raised amount
+            await loadCampaign();
+        } catch (err: any) {
+            const msg = err?.reason || err?.message || "Transaction failed.";
+            setDonateError(msg.length > 120 ? msg.slice(0, 120) + "…" : msg);
+        } finally {
+            setIsDonating(false);
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="page-container">
+                <p style={{ textAlign: "center", opacity: 0.6, marginTop: "4rem" }}>
+                    Loading campaign from blockchain...
+                </p>
+            </div>
+        );
+    }
+
+    if (notFound || !campaign) {
         return (
             <div className="page-container">
                 <div className="not-found">
                     <h2>Campaign Not Found</h2>
                     <p>This campaign doesn&apos;t exist or has been removed.</p>
-                    <a href="/campaigns" className="btn-primary">
-                        Browse Campaigns
-                    </a>
+                    <a href="/campaigns" className="btn-primary">Browse Campaigns</a>
                 </div>
             </div>
         );
@@ -71,48 +104,20 @@ export default function CampaignDetailPage() {
         0,
         Math.ceil((campaign.deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     );
-
-    const handleDonate = async () => {
-        if (!isConnected) {
-            await connect();
-            return;
-        }
-        if (!donateAmount || parseFloat(donateAmount) <= 0) {
-            alert("Please enter a valid amount");
-            return;
-        }
-        try {
-            setIsDonating(true);
-            // On mainnet this would call: donateToCampaign(signer, parseInt(id), donateAmount)
-            alert(`Demo mode: Would donate ${donateAmount} AVAX to campaign #${id}`);
-        } catch (err) {
-            console.error("Donation failed:", err);
-        } finally {
-            setIsDonating(false);
-        }
-    };
-
-    const categoryIcons: Record<string, string> = {
-        Tuition: "🎓",
-        Books: "📚",
-        Research: "🔬",
-        Housing: "🏠",
-        Technology: "💻",
-        Other: "✨",
-    };
-
-    const quickAmounts = ["1", "5", "10", "25"];
+    const isExpired = daysLeft === 0;
 
     return (
         <div className="page-container">
             <div className="campaign-detail">
-                {/* Left Column - Info */}
+                {/* ── Left Column ── */}
                 <div className="detail-main">
                     <div className="detail-header">
                         <span className="detail-category">
                             {categoryIcons[campaign.category] || "✨"} {campaign.category}
                         </span>
-                        <span className="detail-days">{daysLeft > 0 ? `${daysLeft} days left` : "Ended"}</span>
+                        <span className="detail-days">
+                            {isExpired ? "Ended" : `${daysLeft} days left`}
+                        </span>
                     </div>
 
                     <h1 className="detail-title">{campaign.title}</h1>
@@ -137,21 +142,33 @@ export default function CampaignDetailPage() {
                         <div className="transparency-grid">
                             <div className="transparency-item">
                                 <span className="t-label">Contract</span>
-                                <span className="t-value">Verified on Snowtrace</span>
+                                <a
+                                    className="t-value"
+                                    href={`https://testnet.snowtrace.io/address/${CONTRACT_ADDRESS}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ textDecoration: "underline", cursor: "pointer" }}
+                                >
+                                    View on Snowtrace ↗
+                                </a>
                             </div>
                             <div className="transparency-item">
                                 <span className="t-label">Network</span>
-                                <span className="t-value">Avalanche C-Chain</span>
+                                <span className="t-value">Avalanche Fuji Testnet</span>
                             </div>
                             <div className="transparency-item">
                                 <span className="t-label">Commission</span>
                                 <span className="t-value highlight">0% — Direct P2P</span>
                             </div>
+                            <div className="transparency-item">
+                                <span className="t-label">Campaign ID</span>
+                                <span className="t-value">#{id}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column - Donate */}
+                {/* ── Right Column ── */}
                 <div className="detail-sidebar">
                     <div className="donate-card">
                         <div className="donate-progress">
@@ -167,9 +184,44 @@ export default function CampaignDetailPage() {
                             </div>
                             <div className="donate-meta">
                                 <span>👥 {campaign.donorCount} donors</span>
-                                <span>{campaign.progress}% funded</span>
+                                <span>{campaign.progress.toFixed(1)}% funded</span>
                             </div>
                         </div>
+
+                        {txHash && (
+                            <div style={{
+                                padding: "0.75rem",
+                                background: "rgba(34,197,94,0.1)",
+                                border: "1px solid rgba(34,197,94,0.3)",
+                                borderRadius: "8px",
+                                marginBottom: "1rem",
+                                fontSize: "0.85rem"
+                            }}>
+                                ✅ Donation confirmed!{" "}
+                                <a
+                                    href={`https://testnet.snowtrace.io/tx/${txHash}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ textDecoration: "underline" }}
+                                >
+                                    View tx ↗
+                                </a>
+                            </div>
+                        )}
+
+                        {donateError && (
+                            <div style={{
+                                padding: "0.75rem",
+                                background: "rgba(239,68,68,0.1)",
+                                border: "1px solid rgba(239,68,68,0.3)",
+                                borderRadius: "8px",
+                                marginBottom: "1rem",
+                                fontSize: "0.85rem",
+                                color: "#f87171"
+                            }}>
+                                ⚠️ {donateError}
+                            </div>
+                        )}
 
                         <div className="donate-form">
                             <label>Donation Amount (AVAX)</label>
@@ -180,6 +232,7 @@ export default function CampaignDetailPage() {
                                     min="0.01"
                                     placeholder="0.00"
                                     value={donateAmount}
+                                    disabled={isExpired || isDonating}
                                     onChange={(e) => setDonateAmount(e.target.value)}
                                 />
                                 <span className="input-suffix">AVAX</span>
@@ -192,6 +245,7 @@ export default function CampaignDetailPage() {
                                         type="button"
                                         className={`quick-btn ${donateAmount === amt ? "active" : ""}`}
                                         onClick={() => setDonateAmount(amt)}
+                                        disabled={isExpired || isDonating}
                                     >
                                         {amt} AVAX
                                     </button>
@@ -201,13 +255,15 @@ export default function CampaignDetailPage() {
                             <button
                                 onClick={handleDonate}
                                 className="btn-primary btn-full"
-                                disabled={isDonating}
+                                disabled={isDonating || isExpired}
                             >
-                                {!isConnected
-                                    ? "Connect Wallet to Donate"
-                                    : isDonating
-                                        ? "Processing..."
-                                        : `Donate ${donateAmount || "0"} AVAX`}
+                                {isExpired
+                                    ? "Campaign Ended"
+                                    : !isConnected
+                                        ? "Connect Wallet to Donate"
+                                        : isDonating
+                                            ? "Confirming on-chain..."
+                                            : `Donate ${donateAmount || "0"} AVAX`}
                             </button>
 
                             <p className="donate-note">

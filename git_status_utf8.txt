@@ -1,0 +1,14 @@
+A  .claude/settings.local.json
+A  artifacts/build-info/41a8de7ac59fdd3c6043d2898f95bb25.json
+A  artifacts/contracts/Shavaxre.sol/Shavaxre.dbg.json
+A  artifacts/contracts/Shavaxre.sol/Shavaxre.json
+A  cache/solidity-files-cache.json
+M  hardhat.config.js
+M  package-lock.json
+M  package.json
+M  src/app/campaign/[id]/page.tsx
+M  src/app/campaigns/page.tsx
+M  src/app/page.tsx
+M  src/lib/contract.ts
+M  tsconfig.json
+?? git_status.txt

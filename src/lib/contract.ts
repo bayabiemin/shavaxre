@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { BrowserProvider, Contract, formatEther, parseEther } from "ethers";
 import ABI from "./abi.json";
 
@@ -6,7 +7,7 @@ import ABI from "./abi.json";
 // ═══════════════════════════════════════════════════════════════
 
 // Replace with deployed contract address
-export const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000";
+export const CONTRACT_ADDRESS = "0xfaDa353b9300Fc82B72a25B7E59867f4D0376cbd";
 
 // Avalanche C-Chain networks
 export const AVALANCHE_MAINNET = {
