@@ -425,16 +425,326 @@ input, textarea, select { font-family: var(--font-body); }
   animation: fadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 2.2s forwards;
 }
 
-.hero-actions {
+.hero-bottom {
   display: flex;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 2rem;
   opacity: 0;
   animation: fadeUp 0.9s cubic-bezier(0.16, 1, 0.3, 1) 2.5s forwards;
 }
 
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* ── Comparison bar ── */
+.hero-comparison-bar {
+  display: flex;
+  align-items: stretch;
+  width: fit-content;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+
+.hero-cmp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0.6rem 1.2rem;
+}
+
+.hero-cmp-us {
+  background: rgba(232,65,66,0.07);
+  border-left: 1px solid rgba(232,65,66,0.25);
+}
+
+.hero-cmp-vs {
+  display: flex;
+  align-items: center;
+  padding: 0 0.65rem;
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+
+.hero-cmp-platform {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.hero-cmp-us .hero-cmp-platform { color: var(--accent); }
+
+.hero-cmp-val {
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.hero-cmp-bad  { color: var(--text-muted); }
+.hero-cmp-good { color: var(--accent); }
+
 /* ═══════════════════════════════════════════════════════════════
-   SCENE 2: PROBLEM — sticky left, scrolling right
+   SCENE 2: COMPARISON TABLE
+   ═══════════════════════════════════════════════════════════════ */
+
+.comparison-section {
+  padding: 7rem max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  background: linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+}
+
+.comparison-inner { max-width: 920px; }
+
+.comparison-header { margin-bottom: 3.5rem; }
+.comparison-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.025em;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+.comparison-subhead {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.8;
+  max-width: 580px;
+}
+
+.comparison-table {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.cmp-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr 1fr;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-row:last-child { border-bottom: none; }
+
+.cmp-head-row { background: var(--bg-elevated); }
+
+.cmp-cell {
+  padding: 1.1rem 1.5rem;
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+}
+
+.cmp-label-cell {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+.cmp-head-row .cmp-label-cell {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.cmp-other-cell {
+  border-left: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+.cmp-head-row .cmp-other-cell {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.cmp-us-cell {
+  border-left: 1px solid rgba(232,65,66,0.2);
+  background: rgba(232,65,66,0.04);
+}
+.cmp-head-row .cmp-us-cell { background: rgba(232,65,66,0.08); }
+
+.cmp-bad  { color: var(--text-muted); }
+.cmp-good {
+  color: var(--accent);
+  font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  letter-spacing: -0.01em;
+}
+.cmp-us-logo {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 5C: STUDENT STORIES
+   ═══════════════════════════════════════════════════════════════ */
+
+.stories-section {
+  padding: 6rem max(1.5rem, calc((100vw - 1280px) / 2 + 1.5rem));
+  background: var(--bg-secondary);
+}
+
+.stories-header { margin-bottom: 3rem; }
+.stories-header h2 {
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.75rem;
+}
+.stories-subhead {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+.stories-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.story-card {
+  padding: 1.75rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-xl);
+  backdrop-filter: var(--glass-blur);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  cursor: default;
+}
+.story-card:hover {
+  border-color: var(--border-accent);
+  box-shadow: 0 8px 40px rgba(232,65,66,0.08);
+  transform: translateY(-4px);
+}
+
+.story-top {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.story-avatar {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #fff;
+}
+.story-identity { flex: 1; min-width: 0; }
+
+.story-meta {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.18rem;
+}
+.story-name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.12rem;
+}
+.story-field {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.story-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.story-progress-track {
+  height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  margin-bottom: 0.9rem;
+  overflow: hidden;
+}
+.story-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: 1px;
+}
+
+.story-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.story-raised {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.story-avax-unit {
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 0.65;
+}
+.story-badge {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  padding: 0.22rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* ── How-card timing badge ── */
+.how-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+.how-number { margin-bottom: 0; } /* was 1.25rem, now handled by how-card-top */
+.how-timing {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  padding: 0.22rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCENE 2: PROBLEM — sticky left, scrolling right (legacy, unused)
    ═══════════════════════════════════════════════════════════════ */
 
 .problem-section {
@@ -834,12 +1144,20 @@ input, textarea, select { font-family: var(--font-body); }
   /* Mobile: disable sticky scroll containers, use normal flow */
   .statement-scroll-container,
   .impact-scroll-container { height: auto; }
-
   .statement-section,
-  .impact-section {
-    position: relative;
-    min-height: 100vh;
-  }
+  .impact-section { position: relative; min-height: 100vh; }
+
+  /* Comparison table — horizontal scroll on mobile */
+  .comparison-table { overflow-x: auto; }
+  .cmp-row { min-width: 580px; }
+
+  /* Stories — single column */
+  .stories-grid { grid-template-columns: 1fr; gap: 1rem; }
+
+  /* Hero comparison bar — wrap */
+  .hero-comparison-bar { flex-wrap: wrap; width: 100%; }
+  .hero-cmp-item { flex: 1; min-width: 120px; }
+  .hero-cmp-vs { border-left: none; border-top: 1px solid var(--border); width: 100%; padding: 0.3rem 1.2rem; }
 }
 
 /* ═══════════════════════════════════════════════════════════════
