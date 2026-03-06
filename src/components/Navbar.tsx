@@ -25,6 +25,9 @@ export default function Navbar() {
                 <div className="navbar-links">
                     <Link href="/campaigns" className="nav-link">Campaigns</Link>
                     <Link href="/create" className="nav-link">Create</Link>
+                    {isConnected && (
+                        <Link href="/dashboard" className="nav-link">Dashboard</Link>
+                    )}
                 </div>
 
                 <div className="navbar-wallet">

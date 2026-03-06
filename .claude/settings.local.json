@@ -4,7 +4,8 @@
       "Bash(python3:*)",
       "Bash(npm install:*)",
       "Bash(npx hardhat:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npm run:*)"
     ]
   }
 }

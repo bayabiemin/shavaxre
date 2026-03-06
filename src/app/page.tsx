@@ -428,6 +428,50 @@ export default function Home() {
             )}
 
             {/* ══════════════════════════════════════════════
+                SCENE 5C — WHY AVALANCHE
+            ══════════════════════════════════════════════ */}
+            <section className="avax-section">
+                <ScrollReveal animation="blur-in" duration={800}>
+                    <div className="avax-header">
+                        <SectionLabel text="Why Avalanche" />
+                        <h2>Built for speed. Designed for impact.</h2>
+                    </div>
+                </ScrollReveal>
+
+                <StaggerContainer animation="scale-up" staggerDelay={120} duration={700} className="avax-grid">
+                    <div className="avax-card">
+                        <span className="avax-metric">&lt; 1s</span>
+                        <h3>Finality</h3>
+                        <p>Donations confirm in under 1 second. Students see funds instantly — no waiting, no limbo.</p>
+                    </div>
+                    <div className="avax-card">
+                        <span className="avax-metric">$0.02</span>
+                        <h3>Avg Gas Fee</h3>
+                        <p>Compared to <span className="avax-compare">$3.50+ on Ethereum</span>. More of your donation reaches the student.</p>
+                    </div>
+                    <div className="avax-card">
+                        <span className="avax-metric">100%</span>
+                        <h3>On-Chain</h3>
+                        <p>Every transaction verifiable on Snowtrace. Zero off-chain databases — full trustless transparency.</p>
+                    </div>
+                </StaggerContainer>
+
+                <ScrollReveal animation="fade-up" duration={600} delay={300}>
+                    <div className="avax-footer-cta">
+                        <span className="avax-powered">Powered by Avalanche C-Chain</span>
+                        <a
+                            href={`https://testnet.snowtrace.io/address/0xfaDa353b9300Fc82B72a25B7E59867f4D0376cbd`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="avax-contract-link"
+                        >
+                            View Contract on Snowtrace ↗
+                        </a>
+                    </div>
+                </ScrollReveal>
+            </section>
+
+            {/* ══════════════════════════════════════════════
                 SCENE 6 — IMPACT (100vh red wipe)
             ══════════════════════════════════════════════ */}
             <ImpactSection />
