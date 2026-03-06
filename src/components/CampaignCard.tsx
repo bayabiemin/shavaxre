@@ -39,44 +39,61 @@ export default function CampaignCard({
         Other: "✨",
     };
 
-    const icon = categoryIcons[category] || "✨";
+    const clampedProgress = Math.min(progress, 100);
 
     return (
         <Link href={`/campaign/${id}`} className="campaign-card">
-            <div className="card-header">
-                <span className="card-category">
-                    {icon} {category}
-                </span>
-                <span className="card-days">
-                    {daysLeft > 0 ? `${daysLeft}d left` : "Ended"}
-                </span>
+            {/* Progress bar — top of card, full width */}
+            <div className="card-progress-bar-top">
+                <div
+                    className="card-progress-fill-top"
+                    style={{ width: `${clampedProgress}%` }}
+                />
             </div>
 
-            <h3 className="card-title">{title}</h3>
-            <p className="card-description">
-                {description.length > 100 ? description.slice(0, 100) + "..." : description}
-            </p>
+            <div className="card-body">
+                {/* Category + days */}
+                <div className="card-meta-row">
+                    <span className="card-category">
+                        {categoryIcons[category] || "✨"} {category}
+                    </span>
+                    <span className="card-days">
+                        {daysLeft > 0 ? `${daysLeft}d left` : "Ended"}
+                    </span>
+                </div>
 
-            <div className="card-progress-container">
+                {/* Title */}
+                <h3 className="card-title">{title}</h3>
+
+                {/* Student address */}
+                <p className="card-student-mono">
+                    by {student.slice(0, 6)}…{student.slice(-4)}
+                </p>
+
+                {/* Description */}
+                <p className="card-description">
+                    {description.length > 90 ? description.slice(0, 90) + "…" : description}
+                </p>
+
+                {/* Amount + progress */}
+                <div className="card-amount-row">
+                    <span className="card-raised-big">{raisedAvax}</span>
+                    <span className="card-goal-small">/ {goalAvax} AVAX</span>
+                    <span className="card-pct">{clampedProgress.toFixed(0)}%</span>
+                </div>
+
                 <div className="card-progress-bar">
                     <div
                         className="card-progress-fill"
-                        style={{ width: `${Math.min(progress, 100)}%` }}
+                        style={{ width: `${clampedProgress}%` }}
                     />
                 </div>
-                <div className="card-progress-info">
-                    <span className="card-raised">{raisedAvax} AVAX</span>
-                    <span className="card-goal">of {goalAvax} AVAX</span>
-                </div>
-            </div>
 
-            <div className="card-footer">
-                <span className="card-donors">
-                    👥 {donorCount} {donorCount === 1 ? "donor" : "donors"}
-                </span>
-                <span className="card-student" title={student}>
-                    {student.slice(0, 6)}...{student.slice(-4)}
-                </span>
+                {/* Footer */}
+                <div className="card-footer">
+                    <span className="card-donors">👥 {donorCount} {donorCount === 1 ? "donor" : "donors"}</span>
+                    <span className="card-donate-link">Donate Now →</span>
+                </div>
             </div>
         </Link>
     );
