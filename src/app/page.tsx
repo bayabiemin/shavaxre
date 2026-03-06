@@ -47,72 +47,55 @@ function TypewriterLabel({ text }: { text: string }) {
     );
 }
 
-// ─── Statement section — GSAP PIN + white wipe + word reveal ───
+// ─── Statement section — solid white bg, word-by-word reveal ──
 function StatementSection() {
     const sectionRef = useRef<HTMLElement>(null);
-    const bgRef = useRef<HTMLDivElement>(null);
     const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
+    const labelRef = useRef<HTMLDivElement>(null);
 
     const text = "Where blockchain meets education, every AVAX creates a future.";
     const words = text.split(" ");
 
     useEffect(() => {
         const section = sectionRef.current;
-        const bg = bgRef.current;
         const wordEls = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
-        if (!section || !bg || wordEls.length === 0) return;
+        if (!section || wordEls.length === 0) return;
 
-        // Set initial states
-        gsap.set(bg, { scaleX: 0, transformOrigin: "left center" });
-        gsap.set(wordEls, { opacity: 0, y: 20 });
+        gsap.set(wordEls, { opacity: 0, y: 28 });
+        if (labelRef.current) gsap.set(labelRef.current, { opacity: 0, y: 12 });
 
-        const mm = gsap.matchMedia();
-
-        mm.add("(min-width: 768px)", () => {
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: section,
-                    start: "top top",
-                    end: "+=200%",
-                    scrub: 1,
-                    pin: true,
-                    pinSpacing: true,
-                    anticipatePin: 1,
-                },
-            });
-
-            // Phase 1: white wipe
-            tl.to(bg, { scaleX: 1, ease: "none", duration: 0.4 });
-
-            // Phase 2: word-by-word reveal
-            wordEls.forEach((word, i) => {
-                tl.to(word, { opacity: 1, y: 0, ease: "none", duration: 0.05 }, 0.42 + i * 0.04);
-            });
-
-            return () => { tl.kill(); };
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: section,
+                start: "top 55%",
+                toggleActions: "play none none none",
+            },
         });
 
-        mm.add("(max-width: 767px)", () => {
-            // Mobile: simple fade-in without pin
-            gsap.to(bg, {
-                scaleX: 1, ease: "power2.out", duration: 1,
-                scrollTrigger: { trigger: section, start: "top 80%", toggleActions: "play none none none" },
-            });
-            gsap.to(wordEls, {
-                opacity: 1, y: 0, stagger: 0.04, duration: 0.5, ease: "power2.out",
-                scrollTrigger: { trigger: section, start: "top 70%", toggleActions: "play none none none" },
-            });
-            return () => {};
-        });
+        // Label first
+        if (labelRef.current) tl.to(labelRef.current, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
 
-        return () => mm.revert();
+        // Words stagger
+        tl.to(wordEls, {
+            opacity: 1,
+            y: 0,
+            stagger: 0.055,
+            duration: 0.55,
+            ease: "power3.out",
+        }, "-=0.2");
+
+        return () => {
+            tl.scrollTrigger?.kill();
+            tl.kill();
+        };
     }, []);
 
     return (
         <section ref={sectionRef} className="statement-section">
-            <div ref={bgRef} className="statement-wipe-bg" />
             <div className="statement-content">
-                <SectionLabel text="The Solution" light />
+                <div ref={labelRef}>
+                    <SectionLabel text="The Solution" light />
+                </div>
                 <p className="statement-quote">
                     {words.map((word, i) => (
                         <span
@@ -129,68 +112,40 @@ function StatementSection() {
     );
 }
 
-// ─── Impact section — GSAP PIN + red wipe + quote pop ──────────
+// ─── Impact section — solid red bg, quote scale-pop on enter ───
 function ImpactSection() {
     const sectionRef = useRef<HTMLElement>(null);
-    const redOverlayRef = useRef<HTMLDivElement>(null);
     const quoteRef = useRef<HTMLParagraphElement>(null);
     const attrRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         const section = sectionRef.current;
-        const overlay = redOverlayRef.current;
         const quote = quoteRef.current;
         const attr = attrRef.current;
-        if (!section || !overlay || !quote || !attr) return;
+        if (!section || !quote || !attr) return;
 
-        // Initial states
-        gsap.set(overlay, { scaleX: 0, transformOrigin: "right center" });
-        gsap.set(quote, { scale: 0.5, opacity: 0 });
-        gsap.set(attr, { y: 20, opacity: 0 });
+        gsap.set(quote, { scale: 0.72, opacity: 0, y: 30 });
+        gsap.set(attr, { opacity: 0, y: 20 });
 
-        const mm = gsap.matchMedia();
-
-        mm.add("(min-width: 768px)", () => {
-            const tl = gsap.timeline({
-                scrollTrigger: {
-                    trigger: section,
-                    start: "top top",
-                    end: "+=200%",
-                    scrub: 1,
-                    pin: true,
-                    pinSpacing: true,
-                    anticipatePin: 1,
-                },
-            });
-
-            // Phase 1: red wipe
-            tl.to(overlay, { scaleX: 1, ease: "none", duration: 0.4 });
-            // Phase 2: quote pop-in
-            tl.to(quote, { scale: 1, opacity: 1, ease: "back.out(1.7)", duration: 0.3 }, 0.45);
-            // Phase 3: attribution
-            tl.to(attr, { y: 0, opacity: 1, ease: "none", duration: 0.15 }, 0.7);
-
-            return () => { tl.kill(); };
+        const tl = gsap.timeline({
+            scrollTrigger: {
+                trigger: section,
+                start: "top 55%",
+                toggleActions: "play none none none",
+            },
         });
 
-        mm.add("(max-width: 767px)", () => {
-            gsap.to(overlay, {
-                scaleX: 1, duration: 1, ease: "power2.out",
-                scrollTrigger: { trigger: section, start: "top 80%", toggleActions: "play none none none" },
-            });
-            gsap.to([quote, attr], {
-                scale: 1, opacity: 1, y: 0, stagger: 0.15, duration: 0.6, ease: "power2.out",
-                scrollTrigger: { trigger: section, start: "top 70%", toggleActions: "play none none none" },
-            });
-            return () => {};
-        });
+        tl.to(quote, { scale: 1, opacity: 1, y: 0, duration: 1, ease: "power3.out" })
+          .to(attr,  { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.5");
 
-        return () => mm.revert();
+        return () => {
+            tl.scrollTrigger?.kill();
+            tl.kill();
+        };
     }, []);
 
     return (
         <section ref={sectionRef} className="impact-section">
-            <div ref={redOverlayRef} className="impact-wipe-bg" />
             <div className="impact-inner">
                 <p ref={quoteRef} className="impact-quote">
                     &ldquo;Education funded on-chain is education that can&rsquo;t be stolen.&rdquo;

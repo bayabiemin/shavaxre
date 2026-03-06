@@ -568,34 +568,22 @@ input, textarea, select { font-family: var(--font-body); }
 .how-card p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; }
 
 /* ═══════════════════════════════════════════════════════════════
-   SCENE 4: STATEMENT — GSAP PIN + white wipe
+   SCENE 4: STATEMENT — solid white bg, word-by-word reveal
    ═══════════════════════════════════════════════════════════════ */
 
 .statement-section {
   position: relative;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
-  overflow: hidden;
-}
-
-.statement-wipe-bg {
-  position: absolute;
-  inset: 0;
   background: #ffffff;
-  transform: scaleX(0);
-  transform-origin: left center;
-  z-index: 1;
 }
 
 .statement-content {
-  position: relative;
-  z-index: 2;
   max-width: 900px;
   text-align: center;
-  padding: 0 2rem;
+  padding: 6rem 2rem;
 }
 
 .statement-quote {
@@ -839,34 +827,21 @@ input, textarea, select { font-family: var(--font-body); }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SCENE 6: IMPACT — GSAP PIN + red wipe
+   SCENE 6: IMPACT — solid red bg, quote scale-pop on enter
    ═══════════════════════════════════════════════════════════════ */
 
 .impact-section {
-  position: relative;
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
-  overflow: hidden;
-}
-
-.impact-wipe-bg {
-  position: absolute;
-  inset: 0;
   background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: right center;
-  z-index: 1;
 }
 
 .impact-inner {
-  position: relative;
-  z-index: 2;
   max-width: 960px;
   text-align: center;
-  padding: 0 2rem;
+  padding: 6rem 2rem;
 }
 
 .impact-quote {
@@ -876,18 +851,15 @@ input, textarea, select { font-family: var(--font-body); }
   line-height: 1.15;
   letter-spacing: -0.03em;
   color: #fff;
-  opacity: 0;
-  transform: scale(0.5);
 }
 .impact-source {
   display: block;
   font-family: var(--font-mono);
   font-size: 0.72rem;
   letter-spacing: 0.18em;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.65);
   text-transform: uppercase;
   margin-top: 2.5rem;
-  opacity: 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════
