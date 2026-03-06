@@ -111,18 +111,24 @@ export default function CampaignDetailPage() {
             const data = await getCampaignById(provider, id);
             setCampaign(data);
 
-            // Load recent donor events
-            const contract = getContract(provider);
-            const filter = contract.filters.DonationReceived(id);
-            const events = await contract.queryFilter(filter);
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const parsed: DonationEvent[] = [...events].reverse().slice(0, 5).map((e: any) => ({
-                donor: e.args[1] as string,
-                amount: parseFloat(formatEther(e.args[2])).toFixed(4),
-                txHash: e.transactionHash,
-                blockNumber: e.blockNumber,
-            }));
-            setDonors(parsed);
+            // Event query ayrı try-catch — başarısız olursa kampanya yine gösterilir
+            try {
+                const contract = getContract(provider);
+                const currentBlock = await provider.getBlockNumber();
+                const fromBlock = Math.max(0, currentBlock - 5000);
+                const filter = contract.filters.DonationReceived(id);
+                const events = await contract.queryFilter(filter, fromBlock, currentBlock);
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const parsed: DonationEvent[] = [...events].reverse().slice(0, 5).map((e: any) => ({
+                    donor: e.args[1] as string,
+                    amount: parseFloat(formatEther(e.args[2])).toFixed(4),
+                    txHash: e.transactionHash,
+                    blockNumber: e.blockNumber,
+                }));
+                setDonors(parsed);
+            } catch (eventErr) {
+                console.warn("Could not load donation events:", eventErr);
+            }
         } catch {
             setNotFound(true);
         } finally {

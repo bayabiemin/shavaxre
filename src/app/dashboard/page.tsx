@@ -72,30 +72,36 @@ export default function DashboardPage() {
                 setDonorCampaigns(found);
                 setStats({ totalDonated, campaignsSupported, impactScore, avgDonation });
 
-                // Query DonationReceived events filtered by donor
-                const filter = contract.filters.DonationReceived(null, address);
-                const events = await contract.queryFilter(filter);
+                // Event query ayrı try-catch — başarısız olursa dashboard yine gösterilir
+                try {
+                    const currentBlock = await provider.getBlockNumber();
+                    const fromBlock = Math.max(0, currentBlock - 5000);
+                    const filter = contract.filters.DonationReceived(null, address);
+                    const events = await contract.queryFilter(filter, fromBlock, currentBlock);
 
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const txs: TxEvent[] = await Promise.all(
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    [...events].reverse().slice(0, 10).map(async (e: any) => {
-                        const campaignId = Number(e.args[0]);
-                        const amount = formatEther(e.args[2]);
-                        let campaignTitle = `Campaign #${campaignId}`;
-                        try {
-                            const c = await getCampaignById(provider, campaignId);
-                            campaignTitle = c.title;
-                        } catch { /* ignore */ }
-                        return {
-                            campaignId,
-                            campaignTitle,
-                            amount: parseFloat(amount).toFixed(4),
-                            txHash: e.transactionHash,
-                        };
-                    })
-                );
-                setRecentTxs(txs);
+                    const txs: TxEvent[] = await Promise.all(
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        [...events].reverse().slice(0, 10).map(async (e: any) => {
+                            const campaignId = Number(e.args[0]);
+                            const amount = formatEther(e.args[2]);
+                            let campaignTitle = `Campaign #${campaignId}`;
+                            try {
+                                const c = await getCampaignById(provider, campaignId);
+                                campaignTitle = c.title;
+                            } catch { /* ignore */ }
+                            return {
+                                campaignId,
+                                campaignTitle,
+                                amount: parseFloat(amount).toFixed(4),
+                                txHash: e.transactionHash,
+                            };
+                        })
+                    );
+                    setRecentTxs(txs);
+                } catch (eventErr) {
+                    console.warn("Could not load donation events:", eventErr);
+                }
             } catch (e) {
                 console.error("Dashboard load error:", e);
             } finally {
