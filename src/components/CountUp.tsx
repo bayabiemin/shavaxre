@@ -1,12 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useEffect } from "react";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 interface CountUpProps {
     end: number;
     suffix?: string;
     prefix?: string;
-    duration?: number;
+    duration?: number;   // kept for API compat, ignored with scrub
     decimals?: number;
     className?: string;
 }
@@ -15,54 +19,44 @@ export default function CountUp({
     end,
     suffix = "",
     prefix = "",
-    duration = 2200,
     decimals = 0,
     className = "",
 }: CountUpProps) {
-    const [value, setValue] = useState(0);
     const ref = useRef<HTMLSpanElement>(null);
-    const started = useRef(false);
 
     useEffect(() => {
         const el = ref.current;
         if (!el) return;
 
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting && !started.current) {
-                    started.current = true;
-                    const startTime = performance.now();
+        const counter = { val: 0 };
+        const factor = Math.pow(10, decimals);
 
-                    const animate = (now: number) => {
-                        const elapsed = now - startTime;
-                        const progress = Math.min(elapsed / duration, 1);
-                        // Ease out cubic
-                        const eased = 1 - Math.pow(1 - progress, 3);
-                        const factor = Math.pow(10, decimals);
-                        setValue(Math.floor(eased * end * factor) / factor);
-                        if (progress < 1) requestAnimationFrame(animate);
-                        else setValue(end);
-                    };
-
-                    requestAnimationFrame(animate);
-                    observer.unobserve(el);
-                }
+        const anim = gsap.to(counter, {
+            val: end,
+            ease: "none",
+            scrollTrigger: {
+                trigger: el,
+                start: "top 75%",
+                end: "top 10%",
+                scrub: 1,
             },
-            { threshold: 0.4 }
-        );
+            onUpdate: () => {
+                const v = decimals > 0
+                    ? (Math.round(counter.val * factor) / factor).toFixed(decimals)
+                    : Math.round(counter.val).toLocaleString();
+                el.textContent = `${prefix}${v}${suffix}`;
+            },
+        });
 
-        observer.observe(el);
-        return () => observer.disconnect();
-    }, [end, duration, decimals]);
-
-    const formatted =
-        decimals > 0
-            ? value.toFixed(decimals)
-            : Math.floor(value).toLocaleString();
+        return () => {
+            anim.scrollTrigger?.kill();
+            anim.kill();
+        };
+    }, [end, prefix, suffix, decimals]);
 
     return (
         <span ref={ref} className={className}>
-            {prefix}{formatted}{suffix}
+            {prefix}0{suffix}
         </span>
     );
 }

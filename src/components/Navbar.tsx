@@ -1,20 +1,37 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import Link from "next/link";
 import { useWallet } from "./WalletProvider";
-import { useScrollY } from "@/hooks/useScrollProgress";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Navbar() {
     const { address, isConnecting, isConnected, connect, disconnect } = useWallet();
-    const scrollY = useScrollY();
-    const scrolled = scrollY > 80;
+    const navRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        const el = navRef.current;
+        if (!el) return;
+
+        const st = ScrollTrigger.create({
+            trigger: document.body,
+            start: "top top-=80",
+            onEnter: () => el.classList.add("navbar--scrolled"),
+            onLeaveBack: () => el.classList.remove("navbar--scrolled"),
+        });
+
+        return () => st.kill();
+    }, []);
 
     const short = address
         ? `${address.slice(0, 6)}…${address.slice(-4)}`
         : "";
 
     return (
-        <nav className={`navbar ${scrolled ? "navbar--scrolled" : ""}`}>
+        <nav ref={navRef} className="navbar">
             <div className="navbar-inner">
                 <Link href="/" className="navbar-logo">
                     <span className="logo-sha">Sha</span>

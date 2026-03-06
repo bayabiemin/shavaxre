@@ -1,34 +1,47 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useEffect } from "react";
 import Link from "next/link";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CONTRACT_ADDRESS } from "@/lib/contract";
 
-function FooterMega() {
-    const ref = useRef<HTMLDivElement>(null);
-    const [visible, setVisible] = useState(false);
+gsap.registerPlugin(ScrollTrigger);
+
+export default function Footer() {
+    const footerRef = useRef<HTMLElement>(null);
+    const megaTextRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        const el = ref.current;
-        if (!el) return;
-        const observer = new IntersectionObserver(
-            ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.unobserve(el); } },
-            { threshold: 0.2 }
+        const mega = megaTextRef.current;
+        const footer = footerRef.current;
+        if (!mega || !footer) return;
+
+        // clipPath reveal: from center outward
+        const anim = gsap.fromTo(
+            mega,
+            { clipPath: "inset(0% 50% 0% 50%)", opacity: 0.05 },
+            {
+                clipPath: "inset(0% 0% 0% 0%)",
+                opacity: 0.18,
+                ease: "power2.out",
+                scrollTrigger: {
+                    trigger: footer,
+                    start: "top 85%",
+                    end: "top 15%",
+                    scrub: 1,
+                },
+            }
         );
-        observer.observe(el);
-        return () => observer.disconnect();
+
+        return () => {
+            anim.scrollTrigger?.kill();
+            anim.kill();
+        };
     }, []);
 
     return (
-        <div ref={ref} className={`footer-mega ${visible ? "mega-visible" : ""}`} aria-hidden="true">
-            SHA(VAX)RE
-        </div>
-    );
-}
-
-export default function Footer() {
-    return (
-        <footer className="footer">
+        <footer ref={footerRef} className="footer">
             <div className="footer-top">
                 <div className="footer-brand">
                     <div className="footer-logo">
@@ -66,7 +79,10 @@ export default function Footer() {
                 </div>
             </div>
 
-            <FooterMega />
+            {/* GSAP-driven clipPath mega text */}
+            <div ref={megaTextRef} className="footer-mega" aria-hidden="true">
+                SHA(VAX)RE
+            </div>
 
             <div className="footer-bottom">
                 <span>© 2026 Sha(vax)re</span>
