@@ -47,9 +47,9 @@ function TypewriterLabel({ text }: { text: string }) {
     );
 }
 
-// ─── Statement section — solid white bg, word-by-word reveal ──
+// ─── Statement section — sticky scroll + scrub word reveal ────
 function StatementSection() {
-    const sectionRef = useRef<HTMLElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const wordRefs = useRef<(HTMLSpanElement | null)[]>([]);
     const labelRef = useRef<HTMLDivElement>(null);
 
@@ -57,104 +57,147 @@ function StatementSection() {
     const words = text.split(" ");
 
     useEffect(() => {
-        const section = sectionRef.current;
+        const container = containerRef.current;
         const wordEls = wordRefs.current.filter(Boolean) as HTMLSpanElement[];
-        if (!section || wordEls.length === 0) return;
+        if (!container || wordEls.length === 0) return;
 
-        gsap.set(wordEls, { opacity: 0, y: 28 });
+        gsap.set(wordEls, { opacity: 0.06, y: 18 });
         if (labelRef.current) gsap.set(labelRef.current, { opacity: 0, y: 12 });
 
-        const tl = gsap.timeline({
-            scrollTrigger: {
-                trigger: section,
-                start: "top 55%",
-                toggleActions: "play none none none",
-            },
+        const mm = gsap.matchMedia();
+
+        mm.add("(min-width: 768px)", () => {
+            // Desktop: scroll-scrubbed word reveal
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: container,
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1.5,
+                },
+            });
+            if (labelRef.current) {
+                tl.to(labelRef.current, { opacity: 1, y: 0, duration: 0.5, ease: "none" }, 0);
+            }
+            tl.to(wordEls, {
+                opacity: 1,
+                y: 0,
+                stagger: 0.7,
+                duration: 0.6,
+                ease: "none",
+            }, 0.4);
+            return () => { tl.kill(); };
         });
 
-        // Label first
-        if (labelRef.current) tl.to(labelRef.current, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+        mm.add("(max-width: 767px)", () => {
+            // Mobile: play once on enter
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: container,
+                    start: "top 70%",
+                    toggleActions: "play none none none",
+                },
+            });
+            if (labelRef.current) {
+                tl.to(labelRef.current, { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" });
+            }
+            tl.to(wordEls, {
+                opacity: 1,
+                y: 0,
+                stagger: 0.06,
+                duration: 0.5,
+                ease: "power3.out",
+            }, "-=0.2");
+            return () => { tl.kill(); };
+        });
 
-        // Words stagger
-        tl.to(wordEls, {
-            opacity: 1,
-            y: 0,
-            stagger: 0.055,
-            duration: 0.55,
-            ease: "power3.out",
-        }, "-=0.2");
-
-        return () => {
-            tl.scrollTrigger?.kill();
-            tl.kill();
-        };
+        return () => mm.revert();
     }, []);
 
     return (
-        <section ref={sectionRef} className="statement-section">
-            <div className="statement-content">
-                <div ref={labelRef}>
-                    <SectionLabel text="The Solution" light />
+        <div ref={containerRef} className="statement-scroll-container">
+            <section className="statement-section">
+                <div className="statement-content">
+                    <div ref={labelRef}>
+                        <SectionLabel text="The Solution" light />
+                    </div>
+                    <p className="statement-quote">
+                        {words.map((word, i) => (
+                            <span
+                                key={i}
+                                ref={(el) => { wordRefs.current[i] = el; }}
+                                className="statement-word"
+                            >
+                                {word}{" "}
+                            </span>
+                        ))}
+                    </p>
                 </div>
-                <p className="statement-quote">
-                    {words.map((word, i) => (
-                        <span
-                            key={i}
-                            ref={(el) => { wordRefs.current[i] = el; }}
-                            className="statement-word"
-                        >
-                            {word}{" "}
-                        </span>
-                    ))}
-                </p>
-            </div>
-        </section>
+            </section>
+        </div>
     );
 }
 
-// ─── Impact section — solid red bg, quote scale-pop on enter ───
+// ─── Impact section — sticky scroll + scrub quote reveal ──────
 function ImpactSection() {
-    const sectionRef = useRef<HTMLElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const quoteRef = useRef<HTMLParagraphElement>(null);
     const attrRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
-        const section = sectionRef.current;
+        const container = containerRef.current;
         const quote = quoteRef.current;
         const attr = attrRef.current;
-        if (!section || !quote || !attr) return;
+        if (!container || !quote || !attr) return;
 
-        gsap.set(quote, { scale: 0.72, opacity: 0, y: 30 });
+        gsap.set(quote, { scale: 0.72, opacity: 0 });
         gsap.set(attr, { opacity: 0, y: 20 });
 
-        const tl = gsap.timeline({
-            scrollTrigger: {
-                trigger: section,
-                start: "top 55%",
-                toggleActions: "play none none none",
-            },
+        const mm = gsap.matchMedia();
+
+        mm.add("(min-width: 768px)", () => {
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: container,
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 1.5,
+                },
+            });
+            tl.to(quote, { scale: 1, opacity: 1, duration: 3, ease: "none" }, 0)
+              .to(attr,  { opacity: 1, y: 0, duration: 2, ease: "none" }, 2);
+            return () => { tl.kill(); };
         });
 
-        tl.to(quote, { scale: 1, opacity: 1, y: 0, duration: 1, ease: "power3.out" })
-          .to(attr,  { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.5");
+        mm.add("(max-width: 767px)", () => {
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: container,
+                    start: "top 70%",
+                    toggleActions: "play none none none",
+                },
+            });
+            tl.to(quote, { scale: 1, opacity: 1, duration: 1, ease: "power3.out" })
+              .to(attr,  { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }, "-=0.4");
+            return () => { tl.kill(); };
+        });
 
-        return () => {
-            tl.scrollTrigger?.kill();
-            tl.kill();
-        };
+        return () => mm.revert();
     }, []);
 
     return (
-        <section ref={sectionRef} className="impact-section">
-            <div className="impact-inner">
-                <p ref={quoteRef} className="impact-quote">
-                    &ldquo;Education funded on-chain is education that can&rsquo;t be stolen.&rdquo;
-                </p>
-                <span ref={attrRef} className="impact-source">
-                    Sha(vax)re &nbsp;·&nbsp; Built on Avalanche &nbsp;·&nbsp; Build Games 2026
-                </span>
-            </div>
-        </section>
+        <div ref={containerRef} className="impact-scroll-container">
+            <section className="impact-section">
+                <div className="impact-inner">
+                    <p ref={quoteRef} className="impact-quote">
+                        &ldquo;Education funded on-chain is education that can&rsquo;t be stolen.&rdquo;
+                    </p>
+                    <span ref={attrRef} className="impact-source">
+                        Sha(vax)re &nbsp;·&nbsp; Built on Avalanche &nbsp;·&nbsp; Build Games 2026
+                    </span>
+                </div>
+            </section>
+        </div>
     );
 }
 

@@ -568,12 +568,18 @@ input, textarea, select { font-family: var(--font-body); }
 .how-card p { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.7; }
 
 /* ═══════════════════════════════════════════════════════════════
-   SCENE 4: STATEMENT — solid white bg, word-by-word reveal
+   SCENE 4: STATEMENT — sticky scroll + scrub word reveal
    ═══════════════════════════════════════════════════════════════ */
 
-.statement-section {
+.statement-scroll-container {
   position: relative;
-  min-height: 100vh;
+  height: 250vh;
+}
+
+.statement-section {
+  position: sticky;
+  top: 0;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -583,7 +589,7 @@ input, textarea, select { font-family: var(--font-body); }
 .statement-content {
   max-width: 900px;
   text-align: center;
-  padding: 6rem 2rem;
+  padding: 0 2rem;
 }
 
 .statement-quote {
@@ -824,14 +830,31 @@ input, textarea, select { font-family: var(--font-body); }
 
 @media (max-width: 768px) {
   .avax-grid { grid-template-columns: 1fr; }
+
+  /* Mobile: disable sticky scroll containers, use normal flow */
+  .statement-scroll-container,
+  .impact-scroll-container { height: auto; }
+
+  .statement-section,
+  .impact-section {
+    position: relative;
+    min-height: 100vh;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   SCENE 6: IMPACT — solid red bg, quote scale-pop on enter
+   SCENE 6: IMPACT — sticky scroll + scrub quote reveal
    ═══════════════════════════════════════════════════════════════ */
 
+.impact-scroll-container {
+  position: relative;
+  height: 250vh;
+}
+
 .impact-section {
-  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -841,7 +864,7 @@ input, textarea, select { font-family: var(--font-body); }
 .impact-inner {
   max-width: 960px;
   text-align: center;
-  padding: 6rem 2rem;
+  padding: 0 2rem;
 }
 
 .impact-quote {
