@@ -5,10 +5,12 @@ import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { CONTRACT_ADDRESS } from "@/lib/contract";
+import { useLang } from "@/contexts/LangContext";
 
 gsap.registerPlugin(ScrollTrigger);
 
 export default function Footer() {
+    const { t } = useLang();
     const footerRef = useRef<HTMLElement>(null);
     const megaTextRef = useRef<HTMLDivElement>(null);
 
@@ -17,7 +19,6 @@ export default function Footer() {
         const footer = footerRef.current;
         if (!mega || !footer) return;
 
-        // clipPath reveal: from center outward
         const anim = gsap.fromTo(
             mega,
             { clipPath: "inset(0% 50% 0% 50%)", opacity: 0.05 },
@@ -40,6 +41,8 @@ export default function Footer() {
         };
     }, []);
 
+    const taglineParts = t("footer.tagline").split("\n");
+
     return (
         <footer ref={footerRef} className="footer">
             <div className="footer-top">
@@ -50,19 +53,19 @@ export default function Footer() {
                         <span className="logo-re">re</span>
                     </div>
                     <p className="footer-tagline">
-                        Decentralized education funding on Avalanche.<br />
-                        Transparent. Trustless. Direct.
+                        {taglineParts[0]}<br />
+                        {taglineParts[1] || ""}
                     </p>
                 </div>
 
                 <div className="footer-nav">
-                    <h4 className="footer-nav-title">Platform</h4>
-                    <Link href="/campaigns" className="footer-link">Browse Campaigns</Link>
-                    <Link href="/create" className="footer-link">Create Campaign</Link>
+                    <h4 className="footer-nav-title">{t("footer.platform")}</h4>
+                    <Link href="/campaigns" className="footer-link">{t("footer.browse")}</Link>
+                    <Link href="/create" className="footer-link">{t("footer.create")}</Link>
                 </div>
 
                 <div className="footer-chain-info">
-                    <h4 className="footer-nav-title">On-Chain</h4>
+                    <h4 className="footer-nav-title">{t("footer.onChain")}</h4>
                     <a
                         href={`https://testnet.snowtrace.io/address/${CONTRACT_ADDRESS}`}
                         target="_blank" rel="noreferrer"
@@ -79,14 +82,13 @@ export default function Footer() {
                 </div>
             </div>
 
-            {/* GSAP-driven clipPath mega text */}
             <div ref={megaTextRef} className="footer-mega" aria-hidden="true">
                 SHA(VAX)RE
             </div>
 
             <div className="footer-bottom">
                 <span>© 2026 Sha(vax)re</span>
-                <span>Built on Avalanche · Fuji Testnet</span>
+                <span>{t("footer.builtOn")}</span>
                 <a href="https://build.avax.network" target="_blank" rel="noreferrer" className="footer-bottom-link">
                     Avalanche Build Games 2026
                 </a>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SwipeCard, { type SwipeableCampaign } from "./SwipeCard";
 import { fetchTrendingCampaigns } from "../hooks/useShavaxre";
+import { useLang } from "@/contexts/LangContext";
 
 interface SwipeDeckProps {
   walletConnected: boolean;
@@ -36,6 +37,7 @@ async function resolveMetadata(uri: string) {
 }
 
 export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckProps) {
+  const { t } = useLang();
   const [campaigns, setCampaigns] = useState<SwipeableCampaign[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -74,7 +76,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
             animate={{ opacity: [0.3, 1, 0.3] }}
             transition={{ duration: 2, repeat: Infinity }}
           >
-            Loading campaigns...
+            {t("deck.loading")}
           </motion.p>
         </div>
       </div>
@@ -98,7 +100,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           transition={{ delay: 0.2 }}
           className="text-2xl font-bold text-white mb-2"
         >
-          Henuz kampanya yok
+          {t("deck.empty")}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -106,7 +108,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           transition={{ delay: 0.4 }}
           className="text-zinc-400 mb-6"
         >
-          Ilk atesi sen yak!
+          {t("deck.emptyDesc")}
         </motion.p>
         <motion.a
           href="/create"
@@ -117,7 +119,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          Kampanya Olustur →
+          {t("deck.createCta")}
         </motion.a>
       </div>
     );
@@ -140,7 +142,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           transition={{ delay: 0.2 }}
           className="text-2xl font-bold text-white mb-2"
         >
-          Hepsini gordun!
+          {t("deck.done")}
         </motion.h2>
         <motion.p
           initial={{ opacity: 0 }}
@@ -148,7 +150,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           transition={{ delay: 0.4 }}
           className="text-zinc-400 mb-6"
         >
-          Yeni kampanyalar geldiginde tekrar bak
+          {t("deck.doneDesc")}
         </motion.p>
         <motion.button
           onClick={() => { setCurrentIndex(0); loadCampaigns(); }}
@@ -159,7 +161,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          Bastan Basla
+          {t("deck.restart")}
         </motion.button>
       </div>
     );

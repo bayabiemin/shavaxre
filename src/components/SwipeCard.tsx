@@ -13,6 +13,7 @@ import { ethers } from "ethers";
 import { useDonate, useLikeCampaign, type CampaignData } from "../hooks/useShavaxre";
 import { DONATE_PRESETS } from "../lib/contract";
 import Confetti from "./Confetti";
+import { useLang } from "@/contexts/LangContext";
 
 export interface SwipeableCampaign extends CampaignData {
   title: string;
@@ -44,6 +45,7 @@ export default function SwipeCard({
 }: SwipeCardProps) {
   const { donate, isPending: isDonating, isConfirming } = useDonate();
   const { like } = useLikeCampaign();
+  const { t } = useLang();
 
   const [showDonatePanel, setShowDonatePanel] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -162,7 +164,7 @@ export default function SwipeCard({
                   <motion.span
                     style={{ scale: useTransform(likeOpacity, [0, 1], [0.5, 1]) }}
                   >
-                    LIKE
+                    {t("card.like")}
                   </motion.span>
                 </motion.div>
 
@@ -174,7 +176,7 @@ export default function SwipeCard({
                   <motion.span
                     style={{ scale: useTransform(nopeOpacity, [0, 1], [0.5, 1]) }}
                   >
-                    NOPE
+                    {t("card.nope")}
                   </motion.span>
                 </motion.div>
 
@@ -186,7 +188,7 @@ export default function SwipeCard({
                     transition={{ type: "spring", stiffness: 400, damping: 15, delay: 0.3 }}
                     className="absolute top-4 left-1/2 -translate-x-1/2 px-3 py-1 bg-orange-500/90 rounded-full text-xs font-bold text-white backdrop-blur-sm"
                   >
-                    TRENDING
+                    {t("card.trending")}
                   </motion.div>
                 )}
               </div>
@@ -253,8 +255,8 @@ export default function SwipeCard({
 
                 {/* Stats */}
                 <div className="flex gap-4 text-xs text-zinc-500">
-                  <span>{campaign.likes.toString()} likes</span>
-                  <span>{campaign.uniqueDonors.toString()} donors</span>
+                  <span>{campaign.likes.toString()} {t("card.likes")}</span>
+                  <span>{campaign.uniqueDonors.toString()} {t("card.donors")}</span>
                 </div>
               </div>
             </motion.div>
@@ -287,7 +289,7 @@ export default function SwipeCard({
                   ],
                 }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                title={walletConnected ? "Atesle!" : "Once cuzdan bagla"}
+                title={walletConnected ? "AVAX" : t("card.walletFirst")}
               >
                 AVAX
               </motion.button>
@@ -326,7 +328,7 @@ export default function SwipeCard({
             >
               <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-2" />
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-white">Atesle — Hizli Bagis</h3>
+                <h3 className="text-lg font-bold text-white">{t("card.donate")}</h3>
                 <button onClick={() => setShowDonatePanel(false)} className="text-zinc-500 hover:text-white text-xl transition">✕</button>
               </div>
               <p className="text-sm text-zinc-400">{campaign.title}</p>
@@ -353,7 +355,7 @@ export default function SwipeCard({
                   animate={{ opacity: [1, 0.5, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  Cuzdanda onayla...
+                  {t("card.confirming")}
                 </motion.p>
               )}
               {isConfirming && (
@@ -362,7 +364,7 @@ export default function SwipeCard({
                   animate={{ opacity: [1, 0.5, 1] }}
                   transition={{ duration: 1.5, repeat: Infinity }}
                 >
-                  Zincirde onaylaniyor...
+                  {t("card.onChain")}
                 </motion.p>
               )}
             </motion.div>

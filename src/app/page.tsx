@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import Link from "next/link";
 import { useWallet } from "@/components/WalletProvider";
+import { useLang } from "@/contexts/LangContext";
 import SwipeDeck from "@/components/SwipeDeck";
 import CountUp from "@/components/CountUp";
 
@@ -19,13 +20,6 @@ const fadeUp = {
   show: {
     opacity: 1, y: 0, filter: "blur(0px)",
     transition: { duration: 0.8, ease: EASE_OUT },
-  },
-};
-const scaleIn = {
-  hidden: { opacity: 0, scale: 0.92 },
-  show: {
-    opacity: 1, scale: 1,
-    transition: { duration: 0.7, ease: EASE_OUT },
   },
 };
 
@@ -48,31 +42,40 @@ function RevealSection({ children, className = "", delay = 0 }: {
   );
 }
 
-/* ─── Comparison data ─── */
-const COMPARISONS = [
-  { feature: "Platform Fee", gfm: "2.9% + 30¢", kickstarter: "5% + fees", shavaxre: "0%" },
-  { feature: "Fund Release", gfm: "Instant", kickstarter: "All-or-nothing", shavaxre: "65/35 Milestone" },
-  { feature: "Accountability", gfm: "None", kickstarter: "Honor system", shavaxre: "DAO Vote" },
-  { feature: "Transparency", gfm: "Opaque", kickstarter: "Limited", shavaxre: "On-Chain" },
-];
-
 /* ─── How It Works steps ─── */
-const STEPS = [
-  { num: "01", title: "Create", desc: "Stake 0.1 AVAX as trust collateral. Upload your campaign with AI-verified content.", icon: "+" },
-  { num: "02", title: "Fund", desc: "Donors swipe right to like, tap to donate. Funds flow directly — zero intermediaries.", icon: "◆" },
-  { num: "03", title: "Release", desc: "65% unlocks at goal. Submit proof, donors vote, remaining 35% releases on approval.", icon: "→" },
-];
+const STEP_ICONS = ["+", "◆", "→"];
 
 export default function Home() {
   const { isConnected, address } = useWallet();
+  const { t } = useLang();
   const heroRef = useRef(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -150]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const heroScale = useTransform(scrollYProgress, [0, 0.8], [1, 0.95]);
 
+  const COMPARISONS = [
+    { feature: t("cmp.platformFee"),  gfm: "2.9% + 30¢", kickstarter: "5% + fees", shavaxre: "0%" },
+    { feature: t("cmp.fundRelease"),  gfm: t("cmp.instant"), kickstarter: t("cmp.allOrNothing"), shavaxre: t("cmp.milestone") },
+    { feature: t("cmp.accountability"), gfm: t("cmp.none"), kickstarter: t("cmp.honorSystem"), shavaxre: t("cmp.daoVote") },
+    { feature: t("cmp.transparency"), gfm: t("cmp.opaque"), kickstarter: t("cmp.limited"), shavaxre: t("cmp.onChain") },
+  ];
+
+  const STEPS = [
+    { num: "01", title: t("how.step1.title"), desc: t("how.step1.desc"), icon: STEP_ICONS[0] },
+    { num: "02", title: t("how.step2.title"), desc: t("how.step2.desc"), icon: STEP_ICONS[1] },
+    { num: "03", title: t("how.step3.title"), desc: t("how.step3.desc"), icon: STEP_ICONS[2] },
+  ];
+
+  const STATS = [
+    { label: t("stats.campaigns"), value: 12, suffix: "" },
+    { label: t("stats.donated"),   value: 48.5, suffix: " AVAX", decimals: 1 },
+    { label: t("stats.donors"),    value: 87, suffix: "" },
+    { label: t("stats.fee"),       value: 0, suffix: "%", prefix: "" },
+  ];
+
   return (
-    <main className="min-h-screen bg-[#000]">
+    <main className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
       {/* ══════ HERO ══════ */}
       <section ref={heroRef} className="hero">
         <div className="hero-watermark" aria-hidden="true">SHAVAXRE</div>
@@ -83,58 +86,51 @@ export default function Home() {
           initial="hidden"
           animate="show"
         >
-          {/* Label */}
           <motion.div variants={fadeUp} className="hero-label">
-            AVALANCHE BUILD GAMES 2026
+            {t("hero.label")}
           </motion.div>
 
-          {/* Title */}
           <motion.h1 variants={fadeUp} className="hero-title">
             <span className="hero-line">
               <span className="hero-line-inner" style={{ opacity: 1, transform: "none", animation: "none" }}>
-                Education Funding,
+                {t("hero.title1")}
               </span>
             </span>
             <span className="hero-line hero-line-accent">
               <span className="hero-line-inner" style={{ opacity: 1, transform: "none", animation: "none", color: "var(--accent)" }}>
-                Reinvented.
+                {t("hero.title2")}
               </span>
             </span>
           </motion.h1>
 
-          {/* Subtitle */}
           <motion.p variants={fadeUp} className="hero-subtitle" style={{ opacity: 1, animation: "none" }}>
-            Swipe to discover student campaigns. Donate directly on Avalanche.
-            Zero fees. Full transparency. DAO-verified milestones.
+            {t("hero.subtitle")}
           </motion.p>
 
-          {/* CTAs */}
           <motion.div variants={fadeUp} className="hero-bottom" style={{ opacity: 1, animation: "none" }}>
             <div className="hero-actions">
               <Link href="/create" className="btn-primary">
-                Launch Campaign →
+                {t("hero.launch")}
               </Link>
               <a href="#explore" className="btn-secondary">
-                Explore ↓
+                {t("hero.explore")}
               </a>
             </div>
 
-            {/* Comparison bar */}
             <div className="hero-comparison-bar">
               <div className="hero-cmp-item">
                 <span className="hero-cmp-platform">GoFundMe</span>
-                <span className="hero-cmp-val hero-cmp-bad">2.9% fee</span>
+                <span className="hero-cmp-val hero-cmp-bad">2.9% {t("hero.fee")}</span>
               </div>
               <div className="hero-cmp-vs">VS</div>
               <div className="hero-cmp-item hero-cmp-us">
                 <span className="hero-cmp-platform">Sha(vax)re</span>
-                <span className="hero-cmp-val hero-cmp-good">0% fee</span>
+                <span className="hero-cmp-val hero-cmp-good">0% {t("hero.fee")}</span>
               </div>
             </div>
           </motion.div>
         </motion.div>
 
-        {/* Scroll indicator */}
         <motion.div
           className="scroll-indicator"
           initial={{ opacity: 0 }}
@@ -155,12 +151,7 @@ export default function Home() {
       {/* ══════ LIVE STATS TICKER ══════ */}
       <RevealSection className="stats-ticker">
         <div className="stats-ticker-inner">
-          {[
-            { label: "Total Campaigns", value: 12, suffix: "" },
-            { label: "AVAX Donated", value: 48.5, suffix: " AVAX", decimals: 1 },
-            { label: "Unique Donors", value: 87, suffix: "" },
-            { label: "Platform Fee", value: 0, suffix: "%", prefix: "" },
-          ].map((s, i) => (
+          {STATS.map((s, i) => (
             <motion.div
               key={s.label}
               className="stat-item"
@@ -188,7 +179,7 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            DISCOVER
+            {t("swipe.label")}
           </motion.span>
           <motion.h2
             className="swipe-section-title"
@@ -197,7 +188,7 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, ease: EASE_OUT }}
           >
-            Swipe. Like. <span style={{ color: "var(--accent)" }}>Fund.</span>
+            {t("swipe.title")} <span style={{ color: "var(--accent)" }}>{t("swipe.titleAccent")}</span>
           </motion.h2>
           <motion.p
             className="swipe-section-sub"
@@ -206,7 +197,7 @@ export default function Home() {
             viewport={{ once: true }}
             transition={{ delay: 0.2, duration: 0.6 }}
           >
-            Discover student campaigns. Swipe right to boost, tap to donate directly.
+            {t("swipe.sub")}
           </motion.p>
         </RevealSection>
 
@@ -222,9 +213,9 @@ export default function Home() {
 
       {/* ══════ HOW IT WORKS ══════ */}
       <RevealSection className="how-section">
-        <span className="section-label">HOW IT WORKS</span>
+        <span className="section-label">{t("how.label")}</span>
         <h2 className="how-title">
-          Three steps to <span style={{ color: "var(--accent)" }}>transparent</span> funding
+          {t("how.title")} <span style={{ color: "var(--accent)" }}>{t("how.titleAccent")}</span> {t("how.titleEnd")}
         </h2>
         <div className="how-grid">
           {STEPS.map((step, i) => (
@@ -234,16 +225,8 @@ export default function Home() {
               initial={{ opacity: 0, y: 50, rotateX: 15 }}
               whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
               viewport={{ once: true }}
-              transition={{
-                delay: i * 0.15,
-                duration: 0.8,
-                ease: EASE_OUT,
-              }}
-              whileHover={{
-                y: -8,
-                boxShadow: "0 20px 60px rgba(232,65,66,0.15)",
-                transition: { duration: 0.3 },
-              }}
+              transition={{ delay: i * 0.15, duration: 0.8, ease: EASE_OUT }}
+              whileHover={{ y: -8, boxShadow: "0 20px 60px rgba(232,65,66,0.15)", transition: { duration: 0.3 } }}
             >
               <div className="how-card-num">{step.num}</div>
               <div className="how-card-icon">{step.icon}</div>
@@ -258,23 +241,20 @@ export default function Home() {
       <RevealSection className="comparison-section">
         <div className="comparison-inner">
           <div className="comparison-header">
-            <span className="section-label">WHY SHA(VAX)RE</span>
-            <h2>Built different. <span style={{ color: "var(--accent)" }}>Verified on-chain.</span></h2>
-            <p className="comparison-subhead">
-              Traditional platforms take fees and offer no accountability.
-              We put every transaction on Avalanche — verifiable, permanent, trustless.
-            </p>
+            <span className="section-label">{t("cmp.label")}</span>
+            <h2>{t("cmp.title")} <span style={{ color: "var(--accent)" }}>{t("cmp.titleAccent")}</span></h2>
+            <p className="comparison-subhead">{t("cmp.sub")}</p>
           </div>
           <div className="comparison-table">
             <div className="cmp-row cmp-head-row">
-              <div className="cmp-cell cmp-label-cell">Feature</div>
+              <div className="cmp-cell cmp-label-cell">{t("cmp.feature")}</div>
               <div className="cmp-cell cmp-other-cell">GoFundMe</div>
               <div className="cmp-cell cmp-other-cell">Kickstarter</div>
               <div className="cmp-cell cmp-us-cell">
                 <span className="cmp-us-logo">
-                  <span style={{ color: "#fff" }}>Sha</span>
+                  <span style={{ color: "var(--text-primary)" }}>Sha</span>
                   <span style={{ color: "var(--accent)" }}>(vax)</span>
-                  <span style={{ color: "#fff" }}>re</span>
+                  <span style={{ color: "var(--text-primary)" }}>re</span>
                 </span>
               </div>
             </div>
@@ -305,17 +285,14 @@ export default function Home() {
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: EASE_OUT }}
         >
-          <h2 className="cta-title">Ready to make a difference?</h2>
-          <p className="cta-sub">
-            Launch your campaign or start supporting students today.
-            Every AVAX counts.
-          </p>
+          <h2 className="cta-title">{t("cta.title")}</h2>
+          <p className="cta-sub">{t("cta.sub")}</p>
           <div className="cta-actions">
             <Link href="/create" className="btn-primary" style={{ fontSize: "1rem", padding: "0.9rem 2rem" }}>
-              Create Campaign →
+              {t("cta.create")}
             </Link>
             <a href="#explore" className="btn-secondary" style={{ fontSize: "1rem", padding: "0.9rem 2rem" }}>
-              Browse Campaigns
+              {t("cta.browse")}
             </a>
           </div>
         </motion.div>
