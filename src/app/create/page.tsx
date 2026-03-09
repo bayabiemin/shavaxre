@@ -153,11 +153,13 @@ export default function CreatePage() {
         await create(metadataURI, formData.goalAvax);
     };
 
+    const hasSocialLink = formData.twitter.trim() || formData.instagram.trim();
     const isFormValid =
         formData.title.trim() &&
         formData.description.trim() &&
         formData.goalAvax &&
-        parseFloat(formData.goalAvax) > 0;
+        parseFloat(formData.goalAvax) > 0 &&
+        hasSocialLink;
 
     // ── Success State ─────────────────────────────────────────
 
@@ -421,15 +423,7 @@ export default function CreatePage() {
                 {/* ── Social KYC ───────────────────────────── */}
                 <div className="form-group">
                     <label style={{ marginBottom: "0.25rem" }}>
-                        {t("create.socialKyc")}
-                        <span style={{
-                            fontSize: "0.75rem",
-                            color: "var(--text-muted)",
-                            fontWeight: 400,
-                            marginLeft: "0.5rem",
-                        }}>
-                            {t("create.socialOptional")}
-                        </span>
+                        {t("create.socialKyc")} <span style={{ color: "var(--accent)", fontSize: "0.72rem", opacity: 0.9 }}>* {t("create.socialRequired")}</span>
                     </label>
                     <p style={{
                         fontSize: "0.8rem",

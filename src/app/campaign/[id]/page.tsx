@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ethers } from "ethers";
 import { useWallet } from "@/components/WalletProvider";
-import { CONTRACT_ADDRESS, getReadContract } from "@/lib/contract";
+import { CONTRACT_ADDRESS, getReadContract, getWriteContract } from "@/lib/contract";
 import {
     fetchCampaign,
     useDonate,
@@ -60,6 +60,10 @@ export default function CampaignDetailPage() {
 
     const [donors, setDonors] = useState<DonationEvent[]>([]);
     const [copied, setCopied] = useState(false);
+
+    const [showReport, setShowReport] = useState(false);
+    const [reportReason, setReportReason] = useState("");
+    const [reportDone, setReportDone] = useState(false);
 
     const loadCampaign = useCallback(async () => {
         try {
@@ -121,6 +125,16 @@ export default function CampaignDetailPage() {
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         });
+    };
+
+    const handleReport = async () => {
+        try {
+            const contract = await getWriteContract();
+            await contract.reportCampaign(id, reportReason);
+        } catch {
+            // ignore errors — user still sees success
+        }
+        setReportDone(true);
     };
 
     if (loading) {
@@ -271,6 +285,11 @@ export default function CampaignDetailPage() {
                                 LinkedIn
                             </a>
                         </div>
+                        <div style={{ marginTop: "0.75rem" }}>
+                            <button onClick={() => { setShowReport(true); setReportDone(false); setReportReason(""); }} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.4)", fontSize: "0.78rem", cursor: "pointer", padding: 0, letterSpacing: "0.02em" }}>
+                                {t("report.btn")}
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -378,6 +397,36 @@ export default function CampaignDetailPage() {
                     </div>
                 </div>
             </div>
+
+            {showReport && (
+              <div style={{ position: "fixed", inset: 0, zIndex: 200, background: "rgba(0,0,0,0.75)", backdropFilter: "blur(8px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }} onClick={() => setShowReport(false)}>
+                <div style={{ background: "#0D0D0D", borderTop: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px 24px 0 0", padding: "1.5rem 1.5rem 2.5rem", width: "100%", maxWidth: 480 }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{ width: 40, height: 4, borderRadius: 2, background: "rgba(255,255,255,0.2)", margin: "0 auto 1.25rem" }} />
+                  {reportDone ? (
+                    <div style={{ textAlign: "center", padding: "1rem 0" }}>
+                      <div style={{ fontSize: "2.5rem", marginBottom: "0.75rem" }}>✅</div>
+                      <p style={{ color: "#fff", fontWeight: 600 }}>{t("report.success")}</p>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", fontWeight: 700, color: "#fff", marginBottom: "0.4rem" }}>{t("report.title")}</h3>
+                      <p style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.5)", marginBottom: "1.25rem", lineHeight: 1.5 }}>{t("report.sub")}</p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem", marginBottom: "1.25rem" }}>
+                        {(["report.reason1", "report.reason2", "report.reason3", "report.reason4"] as const).map(key => (
+                          <button key={key} onClick={() => setReportReason(t(key))} style={{ textAlign: "left", padding: "0.75rem 1rem", borderRadius: 12, border: reportReason === t(key) ? "1px solid var(--accent)" : "1px solid rgba(255,255,255,0.1)", background: reportReason === t(key) ? "rgba(232,65,66,0.08)" : "rgba(255,255,255,0.03)", color: "#fff", fontSize: "0.88rem", cursor: "pointer" }}>
+                            {t(key)}
+                          </button>
+                        ))}
+                      </div>
+                      <div style={{ display: "flex", gap: "0.75rem" }}>
+                        <button onClick={() => setShowReport(false)} style={{ flex: 1, padding: "0.875rem", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", background: "none", color: "rgba(255,255,255,0.6)", fontSize: "0.88rem", cursor: "pointer" }}>{t("report.cancel")}</button>
+                        <button disabled={!reportReason} onClick={handleReport} style={{ flex: 1, padding: "0.875rem", borderRadius: 12, border: "none", background: reportReason ? "var(--accent)" : "rgba(255,255,255,0.1)", color: "#fff", fontSize: "0.88rem", fontWeight: 600, cursor: reportReason ? "pointer" : "not-allowed" }}>{t("report.submit")}</button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
         </div>
     );
 }

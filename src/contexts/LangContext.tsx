@@ -309,6 +309,21 @@ const dict = {
   "leader.campaigns": { en: "Campaigns", tr: "Kampanya" },
   "leader.noData": { en: "No activity found in recent blocks.", tr: "Son bloklarda aktivite bulunamadı." },
   "leader.loading": { en: "Loading leaders...", tr: "Liderler yükleniyor..." },
+
+  // Create — social link required
+  "create.socialRequired": { en: "At least one social link required (Twitter or Instagram)", tr: "En az bir sosyal hesap gerekli (Twitter veya Instagram)" },
+
+  // Campaign report
+  "report.title": { en: "Report Campaign", tr: "Kampanyayı Şikayet Et" },
+  "report.sub": { en: "Help us keep the platform safe. Reports are reviewed within 24h.", tr: "Platformu güvenli tutmamıza yardım et. Şikayetler 24 saat içinde incelenir." },
+  "report.reason1": { en: "Fake / misleading campaign", tr: "Sahte / yanıltıcı kampanya" },
+  "report.reason2": { en: "Identity fraud", tr: "Kimlik dolandırıcılığı" },
+  "report.reason3": { en: "Inappropriate content", tr: "Uygunsuz içerik" },
+  "report.reason4": { en: "Other", tr: "Diğer" },
+  "report.submit": { en: "Submit Report", tr: "Şikayeti Gönder" },
+  "report.cancel": { en: "Cancel", tr: "İptal" },
+  "report.success": { en: "Report submitted. Thank you for keeping Sha(vax)re safe.", tr: "Şikayet gönderildi. Sha(vax)re'yi güvenli tuttuğun için teşekkürler." },
+  "report.btn": { en: "🚩 Report", tr: "🚩 Şikayet" },
 } as const;
 
 type TranslationKey = keyof typeof dict;

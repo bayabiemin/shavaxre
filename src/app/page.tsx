@@ -206,47 +206,58 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ══════ SWIPE DECK — hero'dan hemen sonra, ana deneyim ══════ */}
-      <section id="explore" className="swipe-section">
-        <RevealSection className="swipe-section-header">
-          <motion.span
-            className="section-label"
-            initial={{ opacity: 0, x: -20 }}
+      {/* ══════ DISCOVER — avax-style split layout ══════ */}
+      <section id="explore" className="discover-section">
+        <div className="discover-inner">
+          {/* Left: text + KPIs */}
+          <motion.div
+            className="discover-text"
+            initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
+            transition={{ duration: 0.9, ease: EASE_OUT }}
           >
-            {t("swipe.label")}
-          </motion.span>
-          <motion.h2
-            className="swipe-section-title"
+            <span className="section-label">{t("swipe.label")}</span>
+            <h2 className="discover-title">
+              {t("swipe.title")}<br />
+              <span style={{ color: "var(--accent)" }}>{t("swipe.titleAccent")}</span>
+            </h2>
+            <p className="discover-sub">{t("swipe.sub")}</p>
+
+            <div className="discover-kpis">
+              {STATS.slice(0, 3).map((s) => (
+                <div key={s.label} className="discover-kpi">
+                  <span className="dk-num">
+                    {s.prefix}<CountUp end={s.value} decimals={s.decimals || 0} />{s.suffix}
+                  </span>
+                  <span className="dk-label">{s.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="discover-actions">
+              <Link href="/create" className="btn-primary">{t("hero.launch")}</Link>
+              <Link href="/campaigns" className="btn-secondary">{t("cta.browse")}</Link>
+            </div>
+
+            {!isConnected && (
+              <p style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--text-muted)", letterSpacing: "0.08em" }}>
+                → {t("card.walletFirst")}
+              </p>
+            )}
+          </motion.div>
+
+          {/* Right: swipe deck */}
+          <motion.div
+            className="discover-deck-col"
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: EASE_OUT }}
+            transition={{ duration: 0.9, ease: EASE_OUT, delay: 0.15 }}
           >
-            {t("swipe.title")} <span style={{ color: "var(--accent)" }}>{t("swipe.titleAccent")}</span>
-          </motion.h2>
-          <motion.p
-            className="swipe-section-sub"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
-            {t("swipe.sub")}
-          </motion.p>
-        </RevealSection>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: EASE_OUT }}
-          style={{ minHeight: 620 }}
-        >
-          <SwipeDeck walletConnected={isConnected} walletAddress={address || undefined} />
-        </motion.div>
+            <SwipeDeck walletConnected={isConnected} walletAddress={address || undefined} />
+          </motion.div>
+        </div>
       </section>
 
       {/* ══════ LEADERBOARD ══════ */}

@@ -22,6 +22,7 @@ contract ShaVaxRe {
     uint256 public constant BPS_DENOMINATOR = 10000;
     uint256 public constant VOTING_PERIOD = 48 hours;
     uint256 public constant QUORUM_BPS = 3000;
+    uint256 public constant MAX_ACTIVE_PER_CREATOR = 3;
 
     enum Status { Active, Phase1Released, VotingOpen, Completed, Failed, Flagged }
 
@@ -47,6 +48,8 @@ contract ShaVaxRe {
     mapping(uint256 => mapping(address => uint256)) public donations;
     mapping(uint256 => mapping(address => bool)) public hasVoted;
     mapping(uint256 => mapping(address => bool)) public hasLiked;
+    mapping(address => uint256) public activeCampaignsByCreator;
+    mapping(address => bool) public blacklisted;
 
     event CampaignCreated(uint256 indexed id, address indexed creator, uint256 goal, string metadataURI);
     event Donated(uint256 indexed id, address indexed donor, uint256 amount);
@@ -57,6 +60,7 @@ contract ShaVaxRe {
     event Phase2Released(uint256 indexed id, uint256 amount);
     event CampaignFailed(uint256 indexed id, uint256 treasuryAmount);
     event CampaignFlagged(uint256 indexed id, uint256 slashedStake);
+    event CampaignReported(uint256 indexed id, address indexed reporter, string reason);
 
     constructor(address _treasury) {
         require(_treasury != address(0), "Zero treasury");
@@ -65,6 +69,8 @@ contract ShaVaxRe {
     }
 
     function createCampaign(string calldata _metadataURI, uint256 _goalAmount) external payable {
+        require(!blacklisted[msg.sender], "Address blacklisted");
+        require(activeCampaignsByCreator[msg.sender] < MAX_ACTIVE_PER_CREATOR, "Max active campaigns reached");
         require(msg.value >= STAKE_AMOUNT, "Stake 0.1 AVAX required");
         require(_goalAmount > 0, "Goal must be > 0");
         uint256 id = campaignCount++;
@@ -75,6 +81,7 @@ contract ShaVaxRe {
         c.stakeDeposit = msg.value;
         c.status = Status.Active;
         c.createdAt = block.timestamp;
+        activeCampaignsByCreator[msg.sender]++;
         emit CampaignCreated(id, msg.sender, _goalAmount, _metadataURI);
     }
 
@@ -95,6 +102,12 @@ contract ShaVaxRe {
         hasLiked[_campaignId][msg.sender] = true;
         campaigns[_campaignId].likes++;
         emit Liked(_campaignId, msg.sender);
+    }
+
+    function reportCampaign(uint256 _campaignId, string calldata _reason) external {
+        require(campaigns[_campaignId].status == Status.Active, "Not active");
+        require(bytes(_reason).length > 0, "Reason required");
+        emit CampaignReported(_campaignId, msg.sender, _reason);
     }
 
     function _releasePhase1(uint256 _campaignId) internal {
@@ -137,6 +150,7 @@ contract ShaVaxRe {
         bool quorumMet = totalVotes >= quorum;
         require(expired || quorumMet, "Still active");
         uint256 phase2 = (c.totalRaised * PHASE2_BPS) / BPS_DENOMINATOR;
+        if (activeCampaignsByCreator[c.creator] > 0) activeCampaignsByCreator[c.creator]--;
         if (quorumMet && c.yesVotes > c.noVotes) {
             c.status = Status.Completed;
             (bool a, ) = payable(c.creator).call{value: phase2}("");
@@ -157,9 +171,14 @@ contract ShaVaxRe {
         Campaign storage c = campaigns[_campaignId];
         require(c.status == Status.Active, "Not active");
         c.status = Status.Flagged;
+        if (activeCampaignsByCreator[c.creator] > 0) activeCampaignsByCreator[c.creator]--;
         (bool ok, ) = payable(treasury).call{value: c.stakeDeposit}("");
         require(ok, "Slash failed");
         emit CampaignFlagged(_campaignId, c.stakeDeposit);
+    }
+
+    function blacklistAddress(address _addr, bool _status) external onlyOwner {
+        blacklisted[_addr] = _status;
     }
 
     function claimRefund(uint256 _campaignId) external nonReentrant {

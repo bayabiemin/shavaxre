@@ -1860,3 +1860,121 @@ input, textarea, select { font-family: var(--font-body); }
 @media (max-width: 768px) {
   .achievements-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   DISCOVER SECTION — avax-style 2-col split layout
+   ═══════════════════════════════════════════════════════════════ */
+
+.discover-section {
+  padding: 7rem var(--section-pad);
+  background: var(--bg-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.discover-section::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 500px; height: 500px;
+  background: radial-gradient(circle, rgba(232,65,66,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.discover-inner {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  gap: 6rem;
+  align-items: center;
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
+.discover-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2rem;
+}
+
+.discover-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.8rem, 5.5vw, 5rem);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  color: var(--text-primary);
+}
+
+.discover-sub {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  max-width: 440px;
+}
+
+.discover-kpis {
+  display: flex;
+  gap: 3rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+}
+
+.discover-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dk-num {
+  font-family: var(--font-display);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.dk-label {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--text-muted);
+}
+
+.discover-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.discover-deck-col {
+  position: relative;
+  height: 740px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1100px) {
+  .discover-inner {
+    grid-template-columns: 1fr;
+    gap: 3.5rem;
+  }
+  .discover-deck-col { height: 700px; }
+  .discover-title { font-size: clamp(2.2rem, 8vw, 3.5rem); }
+}
+
+@media (max-width: 640px) {
+  .discover-section { padding: 4rem 1rem; overflow: hidden; }
+  .discover-deck-col { height: 640px; }
+  .discover-kpis { gap: 1.5rem; }
+  .dk-num { font-size: 1.6rem; }
+  .discover-actions { flex-direction: column; width: 100%; }
+  .discover-actions .btn-primary,
+  .discover-actions .btn-secondary { justify-content: center; }
+}
