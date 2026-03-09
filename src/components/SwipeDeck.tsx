@@ -20,12 +20,10 @@ async function resolveMetadata(uri: string) {
     const data = await res.json();
 
     let imageUrl = data.image || data.imageUrl || "";
-    if (imageUrl.startsWith("local://")) {
-      const key = imageUrl.replace("local://", "");
-      try { imageUrl = localStorage.getItem(key) || ""; } catch { imageUrl = ""; }
-    } else if (imageUrl.startsWith("ipfs://")) {
+    if (imageUrl.startsWith("ipfs://")) {
       imageUrl = imageUrl.replace("ipfs://", "https://ipfs.io/ipfs/");
     }
+    // data:image/... URLs pass through as-is (base64 embedded)
 
     return {
       title: data.title || data.name || "Kampanya",
