@@ -1,10 +1,12 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import { motion, useScroll, useTransform, useInView } from "framer-motion";
 import Link from "next/link";
+import { ethers } from "ethers";
 import { useWallet } from "@/components/WalletProvider";
 import { useLang } from "@/contexts/LangContext";
+import { getReadContract } from "@/lib/contract";
 import SwipeDeck from "@/components/SwipeDeck";
 import CountUp from "@/components/CountUp";
 
@@ -45,10 +47,59 @@ function RevealSection({ children, className = "", delay = 0 }: {
 /* ─── Step icons ─── */
 const STEP_ICONS = ["+", "◆", "→"];
 
+interface LeaderEntry {
+  address: string;
+  total: bigint;
+  campaigns: number;
+}
+
 export default function Home() {
   const { isConnected, address } = useWallet();
   const { t } = useLang();
   const heroRef = useRef(null);
+
+  const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
+  const [leaderLoading, setLeaderLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadLeaderboard() {
+      try {
+        const contract = getReadContract();
+        const provider = contract.runner?.provider;
+        if (!provider || !('getBlockNumber' in provider)) { setLeaderLoading(false); return; }
+        const rpc = provider as ethers.JsonRpcProvider;
+        const currentBlock = await rpc.getBlockNumber();
+        const fromBlock = Math.max(0, currentBlock - 2048);
+        const filter = contract.filters.Donated();
+        const events = await contract.queryFilter(filter, fromBlock, currentBlock);
+
+        const totals = new Map<string, { total: bigint; campaigns: Set<number> }>();
+        for (const e of events) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const ev = e as any;
+          const donor = (ev.args[1] as string).toLowerCase();
+          const amount = ev.args[2] as bigint;
+          const cid = Number(ev.args[0]);
+          if (!totals.has(donor)) totals.set(donor, { total: 0n, campaigns: new Set() });
+          const entry = totals.get(donor)!;
+          entry.total += amount;
+          entry.campaigns.add(cid);
+        }
+
+        const sorted: LeaderEntry[] = [...totals.entries()]
+          .map(([addr, { total, campaigns }]) => ({ address: addr, total, campaigns: campaigns.size }))
+          .sort((a, b) => (b.total > a.total ? 1 : b.total < a.total ? -1 : 0))
+          .slice(0, 5);
+
+        setLeaderboard(sorted);
+      } catch (e) {
+        console.warn("Leaderboard load error:", e);
+      } finally {
+        setLeaderLoading(false);
+      }
+    }
+    loadLeaderboard();
+  }, []);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, -150]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
@@ -197,6 +248,53 @@ export default function Home() {
           <SwipeDeck walletConnected={isConnected} walletAddress={address || undefined} />
         </motion.div>
       </section>
+
+      {/* ══════ LEADERBOARD ══════ */}
+      <RevealSection className="leaderboard-section">
+        <span className="section-label">{t("leader.label")}</span>
+        <h2 className="leaderboard-title">
+          {t("leader.title")} <span style={{ color: "var(--accent)" }}>{t("leader.titleAccent")}</span>
+        </h2>
+        <p className="leaderboard-sub">{t("leader.sub")}</p>
+
+        <div className="leaderboard-table">
+          {leaderLoading ? (
+            <div className="leaderboard-empty">{t("leader.loading")}</div>
+          ) : leaderboard.length === 0 ? (
+            <div className="leaderboard-empty">{t("leader.noData")}</div>
+          ) : (
+            <>
+              <div className="leaderboard-head">
+                <span>{t("leader.rank")}</span>
+                <span>{t("leader.wallet")}</span>
+                <span>{t("leader.total")}</span>
+                <span className="hide-mobile">{t("leader.campaigns")}</span>
+              </div>
+              {leaderboard.map((entry, i) => (
+                <motion.div
+                  key={entry.address}
+                  className={`leaderboard-row ${i === 0 ? "leaderboard-row-gold" : ""}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.07, duration: 0.5 }}
+                >
+                  <span className="leader-rank">
+                    {i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : `#${i + 1}`}
+                  </span>
+                  <span className="leader-address">
+                    {entry.address.slice(0, 6)}...{entry.address.slice(-4)}
+                  </span>
+                  <span className="leader-total">
+                    {parseFloat(ethers.formatEther(entry.total)).toFixed(3)} AVAX
+                  </span>
+                  <span className="leader-campaigns hide-mobile">{entry.campaigns}</span>
+                </motion.div>
+              ))}
+            </>
+          )}
+        </div>
+      </RevealSection>
 
       {/* ══════ AVAX-STYLE BANNER — full-width red strip ══════ */}
       <RevealSection className="avax-banner">

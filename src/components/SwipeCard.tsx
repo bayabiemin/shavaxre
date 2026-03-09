@@ -52,6 +52,9 @@ export default function SwipeCard({
   const [showConfetti, setShowConfetti] = useState(false);
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
   const exitDirection = useRef<"left" | "right" | null>(null);
+  const [customAmount, setCustomAmount] = useState("");
+  const [showBigConfirm, setShowBigConfirm] = useState(false);
+  const pendingBigAmount = useRef<bigint | null>(null);
 
   // Motion values with spring for buttery-smooth feel
   const x = useMotionValue(0);
@@ -107,11 +110,24 @@ export default function SwipeCard({
     const hash = await donate(campaign.id, amount);
     if (hash) {
       setShowConfetti(true);
+      setCustomAmount("");
       setTimeout(() => {
         setShowConfetti(false);
         setShowDonatePanel(false);
         onDonateSuccess(campaign.id);
       }, 2200);
+    }
+  };
+
+  const handleCustomSend = () => {
+    const val = parseFloat(customAmount);
+    if (!val || val <= 0) return;
+    const amount = ethers.parseEther(customAmount);
+    if (val > 5) {
+      pendingBigAmount.current = amount;
+      setShowBigConfirm(true);
+    } else {
+      handleDonate(amount);
     }
   };
 
@@ -338,8 +354,45 @@ export default function SwipeCard({
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 350 }}
-              className="fixed inset-x-0 bottom-0 z-50 bg-[#0a0a0f]/95 backdrop-blur-xl border-t border-white/10 rounded-t-3xl p-6 space-y-4"
+              className="fixed inset-x-0 bottom-0 z-50 bg-[#0a0a0f]/95 backdrop-blur-xl border-t border-white/10 rounded-t-3xl p-6 space-y-4 overflow-hidden"
             >
+              {/* Big donation confirm overlay */}
+              <AnimatePresence>
+                {showBigConfirm && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="absolute inset-0 z-10 flex items-center justify-center bg-[#0a0a0f]/95 backdrop-blur-sm rounded-t-3xl p-6"
+                  >
+                    <div className="text-center space-y-4 max-w-xs">
+                      <div className="text-4xl">⚠️</div>
+                      <div>
+                        <p className="text-white font-bold text-xl">{customAmount} AVAX</p>
+                        <p className="text-zinc-400 text-sm mt-1">{t("card.confirmBig")}</p>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => { setShowBigConfirm(false); pendingBigAmount.current = null; }}
+                          className="flex-1 py-3 rounded-2xl bg-white/5 border border-white/10 text-zinc-300 text-sm font-medium"
+                        >
+                          {t("card.confirmCancel")}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (pendingBigAmount.current) handleDonate(pendingBigAmount.current);
+                            setShowBigConfirm(false);
+                            pendingBigAmount.current = null;
+                          }}
+                          className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 text-white text-sm font-bold"
+                        >
+                          {t("card.confirmSend")}
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
               <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mb-2" />
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-bold text-white">{t("card.donate")}</h3>
@@ -363,6 +416,29 @@ export default function SwipeCard({
                   </motion.button>
                 ))}
               </div>
+
+              {/* Manual amount input */}
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  placeholder={t("card.customPlaceholder")}
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
+                  disabled={isDonating || isConfirming}
+                  className="flex-1 py-3 px-4 rounded-2xl bg-white/5 border border-white/10 text-white text-sm placeholder-zinc-600 focus:outline-none focus:border-white/30 disabled:opacity-40 min-w-0"
+                />
+                <motion.button
+                  onClick={handleCustomSend}
+                  disabled={!customAmount || parseFloat(customAmount) <= 0 || isDonating || isConfirming}
+                  className="px-5 py-3 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 text-white font-bold text-sm disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {t("card.customSend")}
+                </motion.button>
+              </div>
+
               {isDonating && (
                 <motion.p
                   className="text-center text-orange-400 text-sm"

@@ -1582,3 +1582,279 @@ input, textarea, select { font-family: var(--font-body); }
   .dash-table-header, .dash-table-row { grid-template-columns: 1fr 100px 100px; }
   .dash-table-header span:last-child, .dash-table-row .dash-row-link { display: none; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   TIER BADGE — dashboard
+   ═══════════════════════════════════════════════════════════════ */
+
+.tier-badge-section {
+  margin-bottom: 2rem;
+}
+
+.tier-badge-label {
+  margin-bottom: 0.75rem;
+}
+
+.tier-badge-inner {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid;
+  border-radius: var(--radius-xl);
+  transition: border-color 0.3s;
+}
+
+.tier-badge-emoji {
+  font-size: 2.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tier-badge-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tier-badge-name {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  margin-bottom: 0.6rem;
+}
+
+.tier-badge-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tier-badge-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.tier-badge-bar-fill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.tier-badge-progress-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
+.tier-badge-score {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACHIEVEMENTS — dashboard
+   ═══════════════════════════════════════════════════════════════ */
+
+.achievements-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  transition: all 0.3s;
+  position: relative;
+}
+
+.achievement-unlocked {
+  border-color: rgba(74, 222, 128, 0.2);
+  background: rgba(74, 222, 128, 0.04);
+  box-shadow: 0 0 20px rgba(74, 222, 128, 0.06);
+}
+
+.achievement-locked {
+  opacity: 0.38;
+  filter: grayscale(1);
+}
+
+.achievement-emoji {
+  font-size: 1.6rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.achievement-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.achievement-name {
+  font-family: var(--font-display);
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.achievement-desc {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.achievement-check {
+  font-size: 0.8rem;
+  color: #4ade80;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LEADERBOARD — homepage
+   ═══════════════════════════════════════════════════════════════ */
+
+.leaderboard-section {
+  padding: 8rem var(--section-pad);
+  background: var(--bg-secondary);
+}
+
+.leaderboard-title {
+  font-family: var(--font-display);
+  font-size: var(--text-section);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.035em;
+  color: var(--text-primary);
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.leaderboard-sub {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  margin-bottom: 2.5rem;
+}
+
+.leaderboard-table {
+  max-width: 680px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.leaderboard-head {
+  display: grid;
+  grid-template-columns: 60px 1fr 160px 100px;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-elevated);
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 60px 1fr 160px 100px;
+  padding: 1rem 1.25rem;
+  align-items: center;
+  border-top: 1px solid var(--border);
+  transition: background 0.15s;
+}
+
+.leaderboard-row:hover { background: rgba(255,255,255,0.02); }
+
+.leaderboard-row-gold {
+  background: rgba(234, 179, 8, 0.04);
+  border-color: rgba(234, 179, 8, 0.15) !important;
+}
+.leaderboard-row-gold:hover { background: rgba(234, 179, 8, 0.06); }
+
+.leaderboard-empty {
+  padding: 2.5rem;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.leader-rank {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.leader-address {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.leader-total {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.leader-campaigns {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MOBILE OVERFLOW FIX — prevent horizontal scroll
+   ═══════════════════════════════════════════════════════════════ */
+
+/* avax banner overflows on very small screens */
+@media (max-width: 480px) {
+  .avax-banner { overflow: hidden; }
+  .avax-banner-inner { gap: 1rem; white-space: normal; flex-wrap: wrap; justify-content: center; }
+  .avax-banner-dot { display: none; }
+
+  /* swipe section: clip overflow on mobile so cards don't cause horizontal scroll */
+  .swipe-section { overflow: hidden; }
+
+  /* achievements: 2 cols on very small */
+  .achievements-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* leaderboard: hide campaigns column */
+  .leaderboard-head, .leaderboard-row { grid-template-columns: 50px 1fr 130px; }
+  .hide-mobile { display: none; }
+}
+
+@media (max-width: 640px) {
+  .tier-badge-inner { flex-wrap: wrap; gap: 0.75rem; }
+  .tier-badge-score { margin-left: auto; }
+  .achievements-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* leaderboard */
+  .leaderboard-head, .leaderboard-row { grid-template-columns: 50px 1fr 130px; }
+  .hide-mobile { display: none; }
+  .leaderboard-section { padding: 5rem 1rem; }
+}
+
+@media (max-width: 768px) {
+  .achievements-grid { grid-template-columns: repeat(2, 1fr); }
+}

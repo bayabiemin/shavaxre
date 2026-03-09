@@ -267,6 +267,48 @@ const dict = {
   "campaignCard.donor": { en: "donor", tr: "bağışçı" },
   "campaignCard.donors": { en: "donors", tr: "bağışçı" },
   "campaignCard.donateNow": { en: "Donate Now →", tr: "Şimdi Bağışla →" },
+
+  // SwipeCard — manual donate
+  "card.customPlaceholder": { en: "Enter amount...", tr: "Miktar gir..." },
+  "card.customSend": { en: "Send", tr: "Gönder" },
+  "card.confirmBig": { en: "This is a large donation. Are you sure?", tr: "Bu büyük bir bağış. Emin misin?" },
+  "card.confirmSend": { en: "Yes, Send", tr: "Evet, Gönder" },
+  "card.confirmCancel": { en: "Cancel", tr: "İptal" },
+
+  // Dashboard — Tier
+  "tier.label": { en: "IMPACT LEVEL", tr: "ETKİ SEVİYESİ" },
+  "tier.seed": { en: "Seed", tr: "Tohum" },
+  "tier.sprout": { en: "Sprout", tr: "Filiz" },
+  "tier.tree": { en: "Tree", tr: "Ağaç" },
+  "tier.forest": { en: "Forest Guardian", tr: "Orman Koruyucusu" },
+  "tier.progressTo": { en: "to next tier", tr: "sonraki seviyeye" },
+  "tier.maxLevel": { en: "Maximum level reached!", tr: "Maksimum seviyeye ulaştın!" },
+
+  // Dashboard — Achievements
+  "achieve.title": { en: "Achievements", tr: "Başarımlar" },
+  "achieve.subtitle": { en: "Unlock badges by taking action on-chain.", tr: "Zincir üstü aksiyonlarla rozetler kazan." },
+  "achieve.firstDrop.name": { en: "First Drop", tr: "İlk Damla" },
+  "achieve.firstDrop.desc": { en: "Made your first donation", tr: "İlk bağışını yaptın" },
+  "achieve.diversifier.name": { en: "Diversifier", tr: "Çeşitlendirici" },
+  "achieve.diversifier.desc": { en: "Supported 3+ different campaigns", tr: "3+ farklı kampanyaya bağış yaptın" },
+  "achieve.whale.name": { en: "Whale", tr: "Balina" },
+  "achieve.whale.desc": { en: "Donated 1+ AVAX in a single tx", tr: "Tek seferde 1+ AVAX bağışladın" },
+  "achieve.builder.name": { en: "Builder", tr: "İnşaatçı" },
+  "achieve.builder.desc": { en: "Created at least 1 campaign", tr: "En az 1 kampanya oluşturdun" },
+  "achieve.centurion.name": { en: "Centurion", tr: "Yüzbaşı" },
+  "achieve.centurion.desc": { en: "Reached Impact Score 100+", tr: "100+ Etki Puanına ulaştın" },
+
+  // Leaderboard
+  "leader.label": { en: "TOP SUPPORTERS", tr: "EN İYİ DESTEKÇILER" },
+  "leader.title": { en: "Community", tr: "Topluluk" },
+  "leader.titleAccent": { en: "Leaders", tr: "Liderleri" },
+  "leader.sub": { en: "Based on recent on-chain activity.", tr: "Son zincir üstü aktiviteye göre." },
+  "leader.rank": { en: "#", tr: "#" },
+  "leader.wallet": { en: "Wallet", tr: "Cüzdan" },
+  "leader.total": { en: "Total", tr: "Toplam" },
+  "leader.campaigns": { en: "Campaigns", tr: "Kampanya" },
+  "leader.noData": { en: "No activity found in recent blocks.", tr: "Son bloklarda aktivite bulunamadı." },
+  "leader.loading": { en: "Loading leaders...", tr: "Liderler yükleniyor..." },
 } as const;
 
 type TranslationKey = keyof typeof dict;
