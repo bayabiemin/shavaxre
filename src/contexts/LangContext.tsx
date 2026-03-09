@@ -23,7 +23,7 @@ const dict = {
     en: "Swipe to discover student campaigns. Donate directly on Avalanche. Zero fees. Full transparency. DAO-verified milestones.",
     tr: "Öğrenci kampanyalarını keşfet. Avalanche üzerinde doğrudan bağış yap. Sıfır komisyon. Tam şeffaflık. DAO onaylı kilometre taşları.",
   },
-  "hero.launch":    { en: "Launch Campaign →", tr: "Kampanya Başlat →" },
+  "hero.launch":    { en: "Launch Campaign", tr: "Kampanya Başlat" },
   "hero.explore":   { en: "Explore ↓",         tr: "Keşfet ↓" },
   "hero.fee":       { en: "fee",               tr: "komisyon" },
 
@@ -92,7 +92,7 @@ const dict = {
     en: "Launch your campaign or start supporting students today. Every AVAX counts.",
     tr: "Kampanyanı başlat ya da bugün öğrencilere destek olmaya başla. Her AVAX önemli.",
   },
-  "cta.create":     { en: "Create Campaign →",  tr: "Kampanya Oluştur →" },
+  "cta.create":     { en: "Create Campaign",  tr: "Kampanya Oluştur" },
   "cta.browse":     { en: "Browse Campaigns",   tr: "Kampanyalara Göz At" },
 
   // Footer
@@ -110,7 +110,7 @@ const dict = {
   "deck.loading":    { en: "Loading campaigns...",   tr: "Kampanyalar yükleniyor..." },
   "deck.empty":      { en: "No campaigns yet",       tr: "Henüz kampanya yok" },
   "deck.emptyDesc":  { en: "Be the first to ignite!", tr: "İlk ateşi sen yak!" },
-  "deck.createCta":  { en: "Create Campaign →",      tr: "Kampanya Oluştur →" },
+  "deck.createCta":  { en: "Create Campaign",      tr: "Kampanya Oluştur" },
   "deck.done":       { en: "You've seen them all!",   tr: "Hepsini gördün!" },
   "deck.doneDesc":   { en: "Check back when new campaigns arrive", tr: "Yeni kampanyalar geldiğinde tekrar bak" },
   "deck.restart":    { en: "Start Over",              tr: "Baştan Başla" },
@@ -125,6 +125,12 @@ const dict = {
   "card.walletFirst": { en: "Connect wallet first", tr: "Önce cüzdan bağla" },
   "card.confirming": { en: "Confirm in wallet...",  tr: "Cüzdanda onayla..." },
   "card.onChain":    { en: "Confirming on-chain...", tr: "Zincirde onaylanıyor..." },
+
+  // Banner
+  "banner.zeroFee":   { en: "ZERO FEES",        tr: "SIFIR KOMİSYON" },
+  "banner.onChain":   { en: "ON-CHAIN",          tr: "ZİNCİR ÜSTÜ" },
+  "banner.directP2P": { en: "DIRECT P2P",        tr: "DOĞRUDAN P2P" },
+  "banner.avalanche": { en: "BUILT ON AVALANCHE", tr: "AVALANCHE ÜZERİNDE" },
 
   // Common
   "common.connectWallet": { en: "Connect Wallet", tr: "Cüzdan Bağla" },

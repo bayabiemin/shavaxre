@@ -8,7 +8,7 @@ import { useLang } from "@/contexts/LangContext";
 import SwipeDeck from "@/components/SwipeDeck";
 import CountUp from "@/components/CountUp";
 
-/* ─── Stagger helpers ─── */
+/* ─── Animation helpers ─── */
 const container = {
   hidden: {},
   show: { transition: { staggerChildren: 0.12, delayChildren: 0.3 } },
@@ -23,7 +23,7 @@ const fadeUp = {
   },
 };
 
-/* ─── Animated section wrapper ─── */
+/* ─── Reveal wrapper ─── */
 function RevealSection({ children, className = "", delay = 0 }: {
   children: React.ReactNode; className?: string; delay?: number;
 }) {
@@ -42,7 +42,7 @@ function RevealSection({ children, className = "", delay = 0 }: {
   );
 }
 
-/* ─── How It Works steps ─── */
+/* ─── Step icons ─── */
 const STEP_ICONS = ["+", "◆", "→"];
 
 export default function Home() {
@@ -74,9 +74,16 @@ export default function Home() {
     { label: t("stats.fee"),       value: 0, suffix: "%", prefix: "" },
   ];
 
+  const BANNER_ITEMS = [
+    t("banner.zeroFee"),
+    t("banner.onChain"),
+    t("banner.directP2P"),
+    t("banner.avalanche"),
+  ];
+
   return (
     <main className="min-h-screen" style={{ background: "var(--bg-primary)" }}>
-      {/* ══════ HERO ══════ */}
+      {/* ══════ HERO — avax-style: centered, massive type ══════ */}
       <section ref={heroRef} className="hero">
         <div className="hero-watermark" aria-hidden="true">SHAVAXRE</div>
         <motion.div
@@ -148,7 +155,25 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ══════ LIVE STATS TICKER ══════ */}
+      {/* ══════ AVAX-STYLE BANNER — full-width red strip ══════ */}
+      <RevealSection className="avax-banner">
+        <motion.div
+          className="avax-banner-inner"
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          {BANNER_ITEMS.map((item, i) => (
+            <span key={i} className="avax-banner-text" style={{ display: "flex", alignItems: "center", gap: "inherit" }}>
+              {i > 0 && <span className="avax-banner-dot" />}
+              {item}
+            </span>
+          ))}
+        </motion.div>
+      </RevealSection>
+
+      {/* ══════ STATS TICKER ══════ */}
       <RevealSection className="stats-ticker">
         <div className="stats-ticker-inner">
           {STATS.map((s, i) => (
@@ -211,7 +236,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* ══════ HOW IT WORKS ══════ */}
+      {/* ══════ HOW IT WORKS — avax-style numbered cards ══════ */}
       <RevealSection className="how-section">
         <span className="section-label">{t("how.label")}</span>
         <h2 className="how-title">
@@ -222,11 +247,11 @@ export default function Home() {
             <motion.div
               key={step.num}
               className="how-card"
-              initial={{ opacity: 0, y: 50, rotateX: 15 }}
-              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.15, duration: 0.8, ease: EASE_OUT }}
-              whileHover={{ y: -8, boxShadow: "0 20px 60px rgba(232,65,66,0.15)", transition: { duration: 0.3 } }}
+              transition={{ delay: i * 0.12, duration: 0.8, ease: EASE_OUT }}
+              whileHover={{ y: -8, transition: { duration: 0.3 } }}
             >
               <div className="how-card-num">{step.num}</div>
               <div className="how-card-icon">{step.icon}</div>
@@ -277,21 +302,21 @@ export default function Home() {
         </div>
       </RevealSection>
 
-      {/* ══════ CTA BANNER ══════ */}
+      {/* ══════ CTA — avax-style: full-width red block ══════ */}
       <RevealSection className="cta-section">
         <motion.div
           className="cta-inner"
-          whileInView={{ scale: [0.95, 1] }}
+          whileInView={{ scale: [0.98, 1] }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: EASE_OUT }}
         >
           <h2 className="cta-title">{t("cta.title")}</h2>
           <p className="cta-sub">{t("cta.sub")}</p>
           <div className="cta-actions">
-            <Link href="/create" className="btn-primary" style={{ fontSize: "1rem", padding: "0.9rem 2rem" }}>
+            <Link href="/create" className="btn-primary" style={{ fontSize: "1rem", padding: "1rem 2.25rem" }}>
               {t("cta.create")}
             </Link>
-            <a href="#explore" className="btn-secondary" style={{ fontSize: "1rem", padding: "0.9rem 2rem" }}>
+            <a href="#explore" className="btn-secondary" style={{ fontSize: "1rem", padding: "1rem 2.25rem" }}>
               {t("cta.browse")}
             </a>
           </div>
