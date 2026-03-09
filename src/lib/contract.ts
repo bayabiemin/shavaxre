@@ -8,7 +8,7 @@ declare global { interface Window { ethereum?: EthereumProvider } }
 import AbiJson from "./abi.json";
 const ABI = AbiJson.abi;
 
-export const CONTRACT_ADDRESS = "0x6E1EB557c63F46880Fc3e7A4C073b9eb4360e2A0";
+export const CONTRACT_ADDRESS = "0x85DA7AFbfC1f9eF43703DBC1cf32b01D3b6006c1";
 
 export const FUJI_CHAIN_ID = 43113;
 export const FUJI_RPC = "https://api.avax-test.network/ext/bc/C/rpc";

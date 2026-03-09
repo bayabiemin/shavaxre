@@ -6,10 +6,12 @@ import CampaignCard from "@/components/CampaignCard";
 import Link from "next/link";
 import SectionLabel from "@/components/SectionLabel";
 import { fetchAllCampaigns, type CampaignData } from "@/hooks/useShavaxre";
+import { useLang } from "@/contexts/LangContext";
 
 type SortKey = "newest" | "most-funded" | "most-donors";
 
 export default function CampaignsPage() {
+    const { t } = useLang();
     const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -20,11 +22,28 @@ export default function CampaignsPage() {
             try {
                 setLoading(true);
                 const all = await fetchAllCampaigns();
+                console.log("[Campaigns] all:", all.length, "active:", all.filter(c => c.status === 0).length);
                 const active = all.filter(c => c.status === 0);
-                setCampaigns(active);
+
+                // Metadata resolve
+                const enriched = await Promise.all(
+                    active.map(async (c) => {
+                        try {
+                            if (!c.metadataURI) return c;
+                            const url = c.metadataURI.startsWith("ipfs://")
+                                ? c.metadataURI.replace("ipfs://", "https://ipfs.io/ipfs/")
+                                : c.metadataURI;
+                            const res = await fetch(url);
+                            const meta = await res.json();
+                            return { ...c, title: meta.title || meta.name, description: meta.description, category: meta.category };
+                        } catch { return c; }
+                    })
+                );
+
+                setCampaigns(enriched);
             } catch (err) {
                 console.error("Failed to load campaigns:", err);
-                setError("Could not load campaigns from blockchain.");
+                setError(t("campaigns.error"));
             } finally {
                 setLoading(false);
             }
@@ -47,13 +66,13 @@ export default function CampaignsPage() {
     return (
         <div className="page-container">
             <div className="page-header">
-                <SectionLabel text="Browse Campaigns" />
-                <h1 className="page-title">Active Campaigns</h1>
+                <SectionLabel text={t("campaigns.label")} />
+                <h1 className="page-title">{t("campaigns.title")}</h1>
                 <p className="page-subtitle">
-                    Browse verified student campaigns and donate AVAX directly — zero middlemen.
+                    {t("campaigns.subtitle")}
                 </p>
                 <Link href="/create" className="btn-primary" style={{ marginTop: "1rem" }}>
-                    + Create Campaign
+                    {t("campaigns.create")}
                 </Link>
             </div>
 
@@ -64,15 +83,15 @@ export default function CampaignsPage() {
                     value={sortBy}
                     onChange={e => setSortBy(e.target.value as SortKey)}
                 >
-                    <option value="newest">Sort: Newest</option>
-                    <option value="most-funded">Sort: Most Funded</option>
-                    <option value="most-donors">Sort: Most Donors</option>
+                    <option value="newest">{t("campaigns.sortNewest")}</option>
+                    <option value="most-funded">{t("campaigns.sortFunded")}</option>
+                    <option value="most-donors">{t("campaigns.sortDonors")}</option>
                 </select>
             </div>
 
             {loading && (
                 <p style={{ textAlign: "center", opacity: 0.6, marginTop: "2rem" }}>
-                    Loading campaigns from blockchain...
+                    {t("campaigns.loading")}
                 </p>
             )}
 
@@ -82,9 +101,9 @@ export default function CampaignsPage() {
 
             {!loading && !error && filtered.length === 0 && (
                 <div className="campaigns-empty">
-                    <p>No campaigns found.</p>
+                    <p>{t("campaigns.empty")}</p>
                     <Link href="/create" className="btn-primary" style={{ marginTop: "1rem" }}>
-                        Be the first!
+                        {t("campaigns.beFirst")}
                     </Link>
                 </div>
             )}
@@ -92,7 +111,7 @@ export default function CampaignsPage() {
             {!loading && filtered.length > 0 && (
                 <>
                     <p className="campaigns-count">
-                        {filtered.length} campaign{filtered.length !== 1 ? "s" : ""}
+                        {filtered.length} {filtered.length !== 1 ? t("campaigns.countPlural") : t("campaigns.count")}
                     </p>
                     <div className="campaigns-grid">
                         {filtered.map(campaign => (

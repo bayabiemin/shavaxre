@@ -700,7 +700,7 @@ input, textarea, select { font-family: var(--font-body); }
   padding: 8rem var(--section-pad);
   background: var(--bg-primary);
   position: relative;
-  overflow: hidden;
+  /* overflow: hidden; — kart exit animasyonu ve done state'i clip'liyor */
 }
 
 .swipe-section::before {

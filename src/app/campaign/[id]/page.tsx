@@ -12,6 +12,7 @@ import {
     type CampaignData,
 } from "@/hooks/useShavaxre";
 import SectionLabel from "@/components/SectionLabel";
+import { useLang } from "@/contexts/LangContext";
 
 // CSS-only confetti (no external lib)
 function ConfettiEffect() {
@@ -48,6 +49,7 @@ export default function CampaignDetailPage() {
     const id = Number(params.id);
     const { address, isConnected, connect } = useWallet();
     const { donate: doDonate, isPending: isDonating, isConfirming, isSuccess: donateSuccess, hash: txHash, error: donateError } = useDonate();
+    const { t } = useLang();
 
     const [campaign, setCampaign] = useState<CampaignData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -71,7 +73,7 @@ export default function CampaignDetailPage() {
                 const provider = contract.runner?.provider;
                 if (provider && 'getBlockNumber' in provider) {
                     const currentBlock = await (provider as ethers.JsonRpcProvider).getBlockNumber();
-                    const fromBlock = Math.max(0, currentBlock - 5000);
+                    const fromBlock = Math.max(0, currentBlock - 2048);
                     const filter = contract.filters.Donated(id);
                     const events = await contract.queryFilter(filter, fromBlock, currentBlock);
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -125,7 +127,7 @@ export default function CampaignDetailPage() {
         return (
             <div className="page-container">
                 <p style={{ textAlign: "center", opacity: 0.6, marginTop: "4rem" }}>
-                    Loading campaign from blockchain...
+                    {t("detail.loading")}
                 </p>
             </div>
         );
@@ -135,9 +137,9 @@ export default function CampaignDetailPage() {
         return (
             <div className="page-container">
                 <div className="not-found">
-                    <h2>Campaign Not Found</h2>
-                    <p>This campaign doesn&apos;t exist or has been removed.</p>
-                    <Link href="/campaigns" className="btn-primary">Browse Campaigns</Link>
+                    <h2>{t("detail.notFound")}</h2>
+                    <p>{t("detail.notFoundDesc")}</p>
+                    <Link href="/campaigns" className="btn-primary">{t("common.browseCampaigns")}</Link>
                 </div>
             </div>
         );
@@ -157,50 +159,50 @@ export default function CampaignDetailPage() {
     return (
         <div className="page-container">
             {/* Back link */}
-            <Link href="/campaigns" className="detail-back">&larr; Back to Campaigns</Link>
+            <Link href="/campaigns" className="detail-back">{t("detail.back")}</Link>
 
             <div className="campaign-detail">
                 {/* ── Left Column ── */}
                 <div className="detail-main">
                     <div className="detail-header">
                         <span className="detail-category">
-                            🎓 Campaign #{id}
+                            🎓 {t("common.campaign")} #{id}
                         </span>
                         <span className={`detail-days ${campaign.status !== 0 ? "ended" : ""}`}>
                             {campaign.statusText}
                         </span>
                     </div>
 
-                    <h1 className="detail-title">Campaign #{id}</h1>
+                    <h1 className="detail-title">{t("common.campaign")} #{id}</h1>
 
                     <div className="detail-student">
                         <div className="student-avatar">
                             {campaign.creator.slice(2, 4).toUpperCase()}
                         </div>
                         <div>
-                            <p className="student-label">Created by</p>
+                            <p className="student-label">{t("detail.createdBy")}</p>
                             <p className="student-address">{campaign.creator}</p>
                         </div>
                     </div>
 
                     {/* Campaign Stats */}
                     <div className="detail-stats-panel">
-                        <SectionLabel text="Campaign Stats" />
+                        <SectionLabel text={t("detail.stats")} />
                         <div className="detail-stats-grid">
                             <div className="detail-stat-item">
-                                <span className="ds-label">Donors</span>
+                                <span className="ds-label">{t("detail.donors")}</span>
                                 <span className="ds-value">{donorCount}</span>
                             </div>
                             <div className="detail-stat-item">
-                                <span className="ds-label">Avg Donation</span>
+                                <span className="ds-label">{t("detail.avgDonation")}</span>
                                 <span className="ds-value">{avgDonation} AVAX</span>
                             </div>
                             <div className="detail-stat-item">
-                                <span className="ds-label">Likes</span>
+                                <span className="ds-label">{t("detail.likes")}</span>
                                 <span className="ds-value">{Number(campaign.likes)}</span>
                             </div>
                             <div className="detail-stat-item">
-                                <span className="ds-label">Progress</span>
+                                <span className="ds-label">{t("detail.progress")}</span>
                                 <span className="ds-value">{progress.toFixed(1)}%</span>
                             </div>
                         </div>
@@ -208,24 +210,24 @@ export default function CampaignDetailPage() {
 
                     {/* On-Chain Transparency */}
                     <div className="detail-transparency">
-                        <h3>🔗 On-Chain Transparency</h3>
+                        <h3>🔗 {t("detail.transparency")}</h3>
                         <div className="transparency-grid">
                             <div className="transparency-item">
-                                <span className="t-label">Contract</span>
+                                <span className="t-label">{t("detail.contract")}</span>
                                 <a className="t-value" href={`https://testnet.snowtrace.io/address/${CONTRACT_ADDRESS}`} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>
-                                    View on Snowtrace ↗
+                                    {t("common.viewOnSnowtrace")}
                                 </a>
                             </div>
                             <div className="transparency-item">
-                                <span className="t-label">Network</span>
+                                <span className="t-label">{t("detail.network")}</span>
                                 <span className="t-value">Avalanche Fuji Testnet</span>
                             </div>
                             <div className="transparency-item">
-                                <span className="t-label">Commission</span>
-                                <span className="t-value highlight">0% — Direct P2P</span>
+                                <span className="t-label">{t("detail.commission")}</span>
+                                <span className="t-value highlight">{t("detail.commissionVal")}</span>
                             </div>
                             <div className="transparency-item">
-                                <span className="t-label">Campaign ID</span>
+                                <span className="t-label">{t("detail.campaignId")}</span>
                                 <span className="t-value">#{id}</span>
                             </div>
                         </div>
@@ -234,7 +236,7 @@ export default function CampaignDetailPage() {
                     {/* Recent Donors */}
                     {donors.length > 0 && (
                         <div className="detail-donors">
-                            <SectionLabel text="Recent Donations" />
+                            <SectionLabel text={t("detail.recentDonations")} />
                             <div className="donors-list">
                                 {donors.map((d, i) => (
                                     <div key={i} className="donor-row">
@@ -249,21 +251,21 @@ export default function CampaignDetailPage() {
                                 ))}
                             </div>
                             <a href={`https://testnet.snowtrace.io/address/${CONTRACT_ADDRESS}#events`} target="_blank" rel="noreferrer" className="donors-view-all">
-                                View all on Snowtrace ↗
+                                {t("common.viewAllSnowtrace")}
                             </a>
                         </div>
                     )}
 
                     {/* Share */}
                     <div className="detail-share">
-                        <SectionLabel text="Share This Campaign" />
+                        <SectionLabel text={t("detail.share")} />
                         <div className="share-buttons">
                             <a href={twitterUrl} target="_blank" rel="noreferrer" className="share-btn share-twitter">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.254 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
                                 Twitter / X
                             </a>
                             <button onClick={handleCopyLink} className="share-btn share-copy">
-                                {copied ? "Copied!" : "Copy Link"}
+                                {copied ? t("detail.copied") : t("detail.copyLink")}
                             </button>
                             <a href={linkedInUrl} target="_blank" rel="noreferrer" className="share-btn share-linkedin">
                                 LinkedIn
@@ -279,14 +281,14 @@ export default function CampaignDetailPage() {
                         <div className="donate-progress">
                             <div className="donate-amounts">
                                 <span className="donate-raised">{parseFloat(raisedAvax).toFixed(2)} AVAX</span>
-                                <span className="donate-goal">of {parseFloat(goalAvax).toFixed(2)} AVAX</span>
+                                <span className="donate-goal">{t("detail.of")} {parseFloat(goalAvax).toFixed(2)} AVAX</span>
                             </div>
                             <div className="donate-bar">
                                 <div className="donate-bar-fill" style={{ width: `${progress}%` }} />
                             </div>
                             <div className="donate-meta">
-                                <span>👥 {donorCount} donors</span>
-                                <span>{progress.toFixed(1)}% funded</span>
+                                <span>👥 {donorCount} {t("detail.donorCount")}</span>
+                                <span>{progress.toFixed(1)}% {t("detail.funded")}</span>
                             </div>
                         </div>
 
@@ -295,15 +297,15 @@ export default function CampaignDetailPage() {
                             <div className="donation-success-card">
                                 {confetti && <ConfettiEffect />}
                                 <div className="success-tick">✓</div>
-                                <h4>Thank you! 🎉</h4>
-                                <p>Your donation is confirmed on Avalanche.</p>
+                                <h4>{t("detail.thankYou")} 🎉</h4>
+                                <p>{t("detail.donationConfirmed")}</p>
                                 <a
                                     href={`https://testnet.snowtrace.io/tx/${txHash}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="success-tx-link"
                                 >
-                                    View tx on Snowtrace ↗
+                                    {t("detail.viewTx")}
                                 </a>
                             </div>
                         )}
@@ -316,7 +318,7 @@ export default function CampaignDetailPage() {
                         {/* Donate form */}
                         {campaign.status === 0 && (
                             <div className="donate-form">
-                                <label>Donation Amount (AVAX)</label>
+                                <label>{t("detail.donationAmount")}</label>
                                 <div className="donate-input-wrap">
                                     <input
                                         type="number"
@@ -350,28 +352,28 @@ export default function CampaignDetailPage() {
                                     disabled={isDonating || isConfirming}
                                 >
                                     {!isConnected
-                                        ? "Connect Wallet to Donate"
+                                        ? t("detail.connectToDonate")
                                         : isDonating
-                                            ? "Confirm in wallet..."
+                                            ? t("detail.confirmWallet")
                                             : isConfirming
-                                                ? "Confirming on-chain..."
-                                                : `Donate ${donateAmount || "0"} AVAX`}
+                                                ? t("detail.confirmChain")
+                                                : `${t("detail.donateBtn")} ${donateAmount || "0"} AVAX →`}
                                 </button>
 
                                 <p className="donate-note">
-                                    Funds go directly to the smart contract. Zero fees. Fully transparent.
+                                    {t("detail.donateNote")}
                                 </p>
                             </div>
                         )}
 
                         {campaign.status !== 0 && (
                             <p className="donate-note" style={{ textAlign: "center", paddingTop: "0.5rem" }}>
-                                This campaign is {campaign.statusText.toLowerCase()}.
+                                {t("detail.campaignEnded")} {campaign.statusText.toLowerCase()}.
                             </p>
                         )}
 
                         {isOwner && campaign.status === 3 && (
-                            <div className="tx-success">✓ Campaign completed successfully.</div>
+                            <div className="tx-success">✓ {t("detail.campaignCompleted")}</div>
                         )}
                     </div>
                 </div>

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { ethers } from "ethers";
+import { useLang } from "@/contexts/LangContext";
 
 interface CampaignCardProps {
     id: number;
@@ -30,6 +33,7 @@ export default function CampaignCard({
     description,
     category,
 }: CampaignCardProps) {
+    const { t } = useLang();
     const goalAvax = ethers.formatEther(goalAmount);
     const raisedAvax = ethers.formatEther(totalRaised);
     const goal = parseFloat(goalAvax);
@@ -60,7 +64,7 @@ export default function CampaignCard({
                 {/* Category + status */}
                 <div className="card-meta-row">
                     <span className="card-category">
-                        {categoryIcons[category || "Other"] || "✨"} {category || "Campaign"}
+                        {categoryIcons[category || "Other"] || "✨"} {category || t("common.campaign")}
                     </span>
                     <span className="card-days">
                         {statusText}
@@ -68,11 +72,11 @@ export default function CampaignCard({
                 </div>
 
                 {/* Title */}
-                <h3 className="card-title">{title || `Campaign #${id}`}</h3>
+                <h3 className="card-title">{title || `${t("common.campaign")} #${id}`}</h3>
 
                 {/* Creator address */}
                 <p className="card-student-mono">
-                    by {creator.slice(0, 6)}...{creator.slice(-4)}
+                    {t("campaignCard.by")} {creator.slice(0, 6)}...{creator.slice(-4)}
                 </p>
 
                 {/* Description */}
@@ -98,9 +102,9 @@ export default function CampaignCard({
 
                 {/* Footer */}
                 <div className="card-footer">
-                    <span className="card-donors">👥 {donors} {donors === 1 ? "donor" : "donors"}</span>
+                    <span className="card-donors">👥 {donors} {donors === 1 ? t("campaignCard.donor") : t("campaignCard.donors")}</span>
                     <span className="card-donors">❤️ {Number(likes)}</span>
-                    <span className="card-donate-link">Donate Now →</span>
+                    <span className="card-donate-link">{t("campaignCard.donateNow")}</span>
                 </div>
             </div>
         </Link>

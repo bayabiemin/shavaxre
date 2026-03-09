@@ -100,6 +100,11 @@ export async function fetchMyDonation(campaignId: number, address: string): Prom
   return contract.getDonation(campaignId, address);
 }
 
+export async function checkHasLiked(campaignId: number, address: string): Promise<boolean> {
+  const contract = getReadContract();
+  return contract.hasLiked(campaignId, address);
+}
+
 async function executeTx(
   txFn: () => Promise<ethers.TransactionResponse>,
   setState: (s: TxState) => void

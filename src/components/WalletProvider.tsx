@@ -59,6 +59,30 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         setProvider(null);
     }, []);
 
+    // Auto-reconnect on page load
+    useEffect(() => {
+        if (typeof window === "undefined" || !(window as any).ethereum) return;
+
+        const reconnect = async () => {
+            try {
+                const accounts: string[] = await (window as any).ethereum.request({
+                    method: "eth_accounts",
+                });
+                if (accounts.length > 0) {
+                    const bp = new BrowserProvider((window as any).ethereum);
+                    const s = await bp.getSigner();
+                    setAddress(accounts[0]);
+                    setSigner(s);
+                    setProvider(bp);
+                }
+            } catch (err) {
+                console.warn("Auto-reconnect failed:", err);
+            }
+        };
+
+        reconnect();
+    }, []);
+
     // Listen for account changes
     useEffect(() => {
         if (typeof window !== "undefined" && (window as any).ethereum) {

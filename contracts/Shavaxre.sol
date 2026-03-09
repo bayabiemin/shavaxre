@@ -46,6 +46,7 @@ contract ShaVaxRe {
     mapping(uint256 => Campaign) public campaigns;
     mapping(uint256 => mapping(address => uint256)) public donations;
     mapping(uint256 => mapping(address => bool)) public hasVoted;
+    mapping(uint256 => mapping(address => bool)) public hasLiked;
 
     event CampaignCreated(uint256 indexed id, address indexed creator, uint256 goal, string metadataURI);
     event Donated(uint256 indexed id, address indexed donor, uint256 amount);
@@ -90,6 +91,8 @@ contract ShaVaxRe {
 
     function likeCampaign(uint256 _campaignId) external {
         require(campaigns[_campaignId].status == Status.Active, "Not active");
+        require(!hasLiked[_campaignId][msg.sender], "Already liked");
+        hasLiked[_campaignId][msg.sender] = true;
         campaigns[_campaignId].likes++;
         emit Liked(_campaignId, msg.sender);
     }

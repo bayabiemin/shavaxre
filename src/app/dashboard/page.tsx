@@ -7,6 +7,7 @@ import { useWallet } from "@/components/WalletProvider";
 import { getReadContract } from "@/lib/contract";
 import { fetchCampaign, type CampaignData } from "@/hooks/useShavaxre";
 import SectionLabel from "@/components/SectionLabel";
+import { useLang } from "@/contexts/LangContext";
 
 interface DonorCampaign {
     campaign: CampaignData;
@@ -21,6 +22,7 @@ interface TxEvent {
 
 export default function DashboardPage() {
     const { address, isConnected, connect } = useWallet();
+    const { t } = useLang();
 
     const [donorCampaigns, setDonorCampaigns] = useState<DonorCampaign[]>([]);
     const [recentTxs, setRecentTxs] = useState<TxEvent[]>([]);
@@ -75,7 +77,7 @@ export default function DashboardPage() {
                     if (provider && 'getBlockNumber' in provider) {
                         const rpcProvider = provider as ethers.JsonRpcProvider;
                         const currentBlock = await rpcProvider.getBlockNumber();
-                        const fromBlock = Math.max(0, currentBlock - 5000);
+                        const fromBlock = Math.max(0, currentBlock - 2048);
                         const filter = contract.filters.Donated(null, address);
                         const events = await contract.queryFilter(filter, fromBlock, currentBlock);
 
@@ -104,9 +106,9 @@ export default function DashboardPage() {
             <div className="page-container">
                 <div className="dashboard-connect">
                     <div className="dashboard-connect-icon">👛</div>
-                    <h2>Connect Your Wallet</h2>
-                    <p>Connect your wallet to view your donation history and impact score.</p>
-                    <button onClick={connect} className="btn-primary">Connect Wallet</button>
+                    <h2>{t("dash.connectTitle")}</h2>
+                    <p>{t("dash.connectDesc")}</p>
+                    <button onClick={connect} className="btn-primary">{t("common.connectWallet")}</button>
                 </div>
             </div>
         );
@@ -116,7 +118,7 @@ export default function DashboardPage() {
         return (
             <div className="page-container">
                 <p style={{ textAlign: "center", opacity: 0.6, marginTop: "4rem" }}>
-                    Loading your dashboard from blockchain...
+                    {t("dash.loading")}
                 </p>
             </div>
         );
@@ -125,9 +127,9 @@ export default function DashboardPage() {
     return (
         <div className="page-container">
             <div className="dashboard-header">
-                <SectionLabel text="My Dashboard" />
+                <SectionLabel text={t("dash.title")} />
                 <h1 className="page-title" style={{ textAlign: "left", marginBottom: "0.25rem" }}>
-                    Your Impact
+                    {t("dash.impact")}
                 </h1>
                 <p className="dashboard-wallet-label">{address}</p>
             </div>
@@ -135,22 +137,22 @@ export default function DashboardPage() {
             {/* ── Stats Grid ── */}
             <div className="dashboard-stats">
                 <div className="dash-stat-card">
-                    <span className="dash-stat-label">Total Donated</span>
+                    <span className="dash-stat-label">{t("dash.totalDonated")}</span>
                     <span className="dash-stat-value">{stats.totalDonated.toFixed(4)}</span>
                     <span className="dash-stat-unit">AVAX</span>
                 </div>
                 <div className="dash-stat-card">
-                    <span className="dash-stat-label">Campaigns Supported</span>
+                    <span className="dash-stat-label">{t("dash.campaignsSupported")}</span>
                     <span className="dash-stat-value">{stats.campaignsSupported}</span>
-                    <span className="dash-stat-unit">campaigns</span>
+                    <span className="dash-stat-unit">{t("dash.campaignsUnit")}</span>
                 </div>
                 <div className="dash-stat-card accent">
-                    <span className="dash-stat-label">Impact Score</span>
+                    <span className="dash-stat-label">{t("dash.impactScore")}</span>
                     <span className="dash-stat-value">{stats.impactScore}</span>
-                    <span className="dash-stat-unit">pts</span>
+                    <span className="dash-stat-unit">{t("dash.pts")}</span>
                 </div>
                 <div className="dash-stat-card">
-                    <span className="dash-stat-label">Avg Donation</span>
+                    <span className="dash-stat-label">{t("dash.avgDonation")}</span>
                     <span className="dash-stat-value">{stats.avgDonation.toFixed(4)}</span>
                     <span className="dash-stat-unit">AVAX</span>
                 </div>
@@ -158,31 +160,31 @@ export default function DashboardPage() {
 
             {/* ── Supported Campaigns ── */}
             <div className="dashboard-section">
-                <SectionLabel text="Supported Campaigns" />
+                <SectionLabel text={t("dash.supported")} />
                 {donorCampaigns.length === 0 ? (
                     <div className="dashboard-empty">
-                        <p>You haven&apos;t donated to any campaigns yet.</p>
+                        <p>{t("dash.noDonations")}</p>
                         <Link href="/campaigns" className="btn-primary" style={{ marginTop: "1rem" }}>
-                            Browse Campaigns
+                            {t("common.browseCampaigns")}
                         </Link>
                     </div>
                 ) : (
                     <div className="dash-table">
                         <div className="dash-table-header">
-                            <span>Campaign</span>
-                            <span>Status</span>
-                            <span>My Donation</span>
+                            <span>{t("dash.colCampaign")}</span>
+                            <span>{t("dash.colStatus")}</span>
+                            <span>{t("dash.colDonation")}</span>
                             <span></span>
                         </div>
                         {donorCampaigns.map(({ campaign, myDonation }) => (
                             <div key={campaign.id} className="dash-table-row">
-                                <span className="dash-row-title">Campaign #{campaign.id}</span>
+                                <span className="dash-row-title">{t("common.campaign")} #{campaign.id}</span>
                                 <span className={`dash-row-status ${campaign.status === 0 ? "status-active" : campaign.status === 3 ? "status-claimed" : "status-ended"}`}>
                                     {campaign.statusText}
                                 </span>
                                 <span className="dash-row-amount">{myDonation} AVAX</span>
                                 <Link href={`/campaign/${campaign.id}`} className="dash-row-link">
-                                    View →
+                                    {t("common.view")}
                                 </Link>
                             </div>
                         ))}
@@ -193,7 +195,7 @@ export default function DashboardPage() {
             {/* ── Recent Transactions ── */}
             {recentTxs.length > 0 && (
                 <div className="dashboard-section">
-                    <SectionLabel text="Recent Transactions" />
+                    <SectionLabel text={t("dash.recentTx")} />
                     <div className="dash-txs">
                         {recentTxs.map((tx, i) => (
                             <div key={i} className="dash-tx-row">
@@ -201,7 +203,7 @@ export default function DashboardPage() {
                                 <div className="dash-tx-info">
                                     <span className="dash-tx-amount">{tx.amount} AVAX</span>
                                     <span className="dash-tx-arrow">&rarr;</span>
-                                    <span className="dash-tx-title">Campaign #{tx.campaignId}</span>
+                                    <span className="dash-tx-title">{t("common.campaign")} #{tx.campaignId}</span>
                                 </div>
                                 <a
                                     href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}
@@ -209,7 +211,7 @@ export default function DashboardPage() {
                                     rel="noreferrer"
                                     className="dash-tx-link"
                                 >
-                                    View on Snowtrace ↗
+                                    {t("common.viewOnSnowtrace")}
                                 </a>
                             </div>
                         ))}

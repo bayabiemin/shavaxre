@@ -1,10 +1,10 @@
 {
   "_format": "hh-sol-cache-2",
   "files": {
-    "C:\\Users\\l3eki\\Desktop\\shavaxre\\contracts\\ShaVaxRe.sol": {
-      "lastModificationDate": 1773010044018,
-      "contentHash": "74c14a1573b2fe72833ccd852d7e082a",
-      "sourceName": "contracts/ShaVaxRe.sol",
+    "C:\\Users\\l3eki\\Desktop\\shavaxre\\contracts\\Shavaxre.sol": {
+      "lastModificationDate": 1773091501295,
+      "contentHash": "5cccfd4d560dd2839fa534d589c14029",
+      "sourceName": "contracts/Shavaxre.sol",
       "solcConfig": {
         "version": "0.8.19",
         "settings": {

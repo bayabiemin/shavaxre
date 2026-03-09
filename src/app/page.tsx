@@ -55,7 +55,7 @@ export default function Home() {
   const heroScale = useTransform(scrollYProgress, [0, 0.8], [1, 0.95]);
 
   const COMPARISONS = [
-    { feature: t("cmp.platformFee"),  gfm: "2.9% + 30¢", kickstarter: "5% + fees", shavaxre: "0%" },
+    { feature: t("cmp.platformFee"),  gfm: t("cmp.gfmFee"), kickstarter: t("cmp.ksFee"), shavaxre: t("cmp.shavaxreFee") },
     { feature: t("cmp.fundRelease"),  gfm: t("cmp.instant"), kickstarter: t("cmp.allOrNothing"), shavaxre: t("cmp.milestone") },
     { feature: t("cmp.accountability"), gfm: t("cmp.none"), kickstarter: t("cmp.honorSystem"), shavaxre: t("cmp.daoVote") },
     { feature: t("cmp.transparency"), gfm: t("cmp.opaque"), kickstarter: t("cmp.limited"), shavaxre: t("cmp.onChain") },
@@ -155,6 +155,49 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* ══════ SWIPE DECK — hero'dan hemen sonra, ana deneyim ══════ */}
+      <section id="explore" className="swipe-section">
+        <RevealSection className="swipe-section-header">
+          <motion.span
+            className="section-label"
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+          >
+            {t("swipe.label")}
+          </motion.span>
+          <motion.h2
+            className="swipe-section-title"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: EASE_OUT }}
+          >
+            {t("swipe.title")} <span style={{ color: "var(--accent)" }}>{t("swipe.titleAccent")}</span>
+          </motion.h2>
+          <motion.p
+            className="swipe-section-sub"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2, duration: 0.6 }}
+          >
+            {t("swipe.sub")}
+          </motion.p>
+        </RevealSection>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: EASE_OUT }}
+          style={{ minHeight: 620 }}
+        >
+          <SwipeDeck walletConnected={isConnected} walletAddress={address || undefined} />
+        </motion.div>
+      </section>
+
       {/* ══════ AVAX-STYLE BANNER — full-width red strip ══════ */}
       <RevealSection className="avax-banner">
         <motion.div
@@ -193,48 +236,6 @@ export default function Home() {
           ))}
         </div>
       </RevealSection>
-
-      {/* ══════ SWIPE DECK ══════ */}
-      <section id="explore" className="swipe-section">
-        <RevealSection className="swipe-section-header">
-          <motion.span
-            className="section-label"
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            {t("swipe.label")}
-          </motion.span>
-          <motion.h2
-            className="swipe-section-title"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, ease: EASE_OUT }}
-          >
-            {t("swipe.title")} <span style={{ color: "var(--accent)" }}>{t("swipe.titleAccent")}</span>
-          </motion.h2>
-          <motion.p
-            className="swipe-section-sub"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-          >
-            {t("swipe.sub")}
-          </motion.p>
-        </RevealSection>
-
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.8, ease: EASE_OUT }}
-        >
-          <SwipeDeck walletConnected={isConnected} walletAddress={address || undefined} />
-        </motion.div>
-      </section>
 
       {/* ══════ HOW IT WORKS — avax-style numbered cards ══════ */}
       <RevealSection className="how-section">

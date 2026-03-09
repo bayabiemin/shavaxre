@@ -3,8 +3,11 @@ const hre = require("hardhat");
 async function main() {
     console.log("📚 Deploying Sha(vax)re to", hre.network.name, "...");
 
-    const Shavaxre = await hre.ethers.getContractFactory("Shavaxre");
-    const contract = await Shavaxre.deploy();
+    const [deployer] = await hre.ethers.getSigners();
+    console.log("🔑 Deployer:", deployer.address);
+
+    const Shavaxre = await hre.ethers.getContractFactory("ShaVaxRe");
+    const contract = await Shavaxre.deploy(deployer.address); // treasury = deployer
     await contract.waitForDeployment();
 
     const address = await contract.getAddress();

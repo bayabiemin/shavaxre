@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   motion,
   useMotionValue,
@@ -32,6 +32,7 @@ interface SwipeCardProps {
   onSwipeLeft: (id: number) => void;
   onDonateSuccess: (id: number) => void;
   walletConnected: boolean;
+  alreadyLiked?: boolean;
 }
 
 const SWIPE_THRESHOLD = 100;
@@ -41,7 +42,7 @@ const springConfig = { stiffness: 300, damping: 30, mass: 0.8 };
 const exitSpring = { type: "spring" as const, stiffness: 200, damping: 30 };
 
 export default function SwipeCard({
-  campaign, onSwipeRight, onSwipeLeft, onDonateSuccess, walletConnected,
+  campaign, onSwipeRight, onSwipeLeft, onDonateSuccess, walletConnected, alreadyLiked = false,
 }: SwipeCardProps) {
   const { donate, isPending: isDonating, isConfirming } = useDonate();
   const { like } = useLikeCampaign();
@@ -50,6 +51,7 @@ export default function SwipeCard({
   const [showDonatePanel, setShowDonatePanel] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [exiting, setExiting] = useState<"left" | "right" | null>(null);
+  const exitDirection = useRef<"left" | "right" | null>(null);
 
   // Motion values with spring for buttery-smooth feel
   const x = useMotionValue(0);
@@ -79,6 +81,10 @@ export default function SwipeCard({
   // Scale subtly on drag
   const dragScale = useTransform(x, [-200, 0, 200], [0.97, 1, 0.97]);
 
+  // Stamp scales — MUST be top-level (not inside conditional JSX)
+  const likeStampScale = useTransform(likeOpacity, [0, 1], [0.5, 1]);
+  const nopeStampScale = useTransform(nopeOpacity, [0, 1], [0.5, 1]);
+
   const progress = campaign.goalAmount > 0n
     ? Number((campaign.totalRaised * 100n) / campaign.goalAmount) : 0;
 
@@ -86,14 +92,16 @@ export default function SwipeCard({
     const { x: ox } = info.offset;
     const { x: vx } = info.velocity;
     if (ox > SWIPE_THRESHOLD || vx > VELOCITY_THRESHOLD) {
+      exitDirection.current = "right";
       setExiting("right");
-      if (walletConnected) like(campaign.id);
-      setTimeout(() => onSwipeRight(campaign.id), 350);
+      if (walletConnected && !alreadyLiked) like(campaign.id);
+      setTimeout(() => onSwipeRight(campaign.id), 400);
     } else if (ox < -SWIPE_THRESHOLD || vx < -VELOCITY_THRESHOLD) {
+      exitDirection.current = "left";
       setExiting("left");
-      setTimeout(() => onSwipeLeft(campaign.id), 350);
+      setTimeout(() => onSwipeLeft(campaign.id), 400);
     }
-  }, [campaign.id, walletConnected, like, onSwipeRight, onSwipeLeft]);
+  }, [campaign.id, walletConnected, alreadyLiked, like, onSwipeRight, onSwipeLeft]);
 
   const handleDonate = async (amount: bigint) => {
     const hash = await donate(campaign.id, amount);
@@ -110,23 +118,21 @@ export default function SwipeCard({
   return (
     <>
       {showConfetti && <Confetti />}
-      <AnimatePresence mode="wait">
-        {!exiting && (
-          <motion.div
-            key={`card-${campaign.id}`}
-            initial={{ scale: 0.9, opacity: 0, y: 30, rotateX: 10 }}
-            animate={{ scale: 1, opacity: 1, y: 0, rotateX: 0 }}
-            exit={{
-              x: exiting === "right" ? 600 : -600,
-              rotateZ: exiting === "right" ? 20 : -20,
-              opacity: 0,
-              scale: 0.8,
-              transition: exitSpring,
-            }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute inset-0 flex items-center justify-center z-10"
-            style={{ perspective: 1000 }}
-          >
+      <motion.div
+        key={`card-${campaign.id}`}
+        initial={{ scale: 0.9, opacity: 0, y: 30, rotateX: 10 }}
+        animate={exiting ? {
+          x: exiting === "right" ? 600 : -600,
+          rotateZ: exiting === "right" ? 20 : -20,
+          opacity: 0,
+          scale: 0.8,
+        } : {
+          scale: 1, opacity: 1, y: 0, rotateX: 0,
+        }}
+        transition={exiting ? exitSpring : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="absolute inset-0 flex items-center justify-center z-10"
+        style={{ perspective: 1000, pointerEvents: exiting ? "none" : "auto" }}
+      >
             <motion.div
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -162,7 +168,7 @@ export default function SwipeCard({
                   className="absolute top-6 left-6 px-5 py-2 rounded-xl border-[3px] border-emerald-400 text-emerald-400 text-2xl font-black -rotate-[12deg]"
                 >
                   <motion.span
-                    style={{ scale: useTransform(likeOpacity, [0, 1], [0.5, 1]) }}
+                    style={{ scale: likeStampScale }}
                   >
                     {t("card.like")}
                   </motion.span>
@@ -174,7 +180,7 @@ export default function SwipeCard({
                   className="absolute top-6 right-6 px-5 py-2 rounded-xl border-[3px] border-red-400 text-red-400 text-2xl font-black rotate-[12deg]"
                 >
                   <motion.span
-                    style={{ scale: useTransform(nopeOpacity, [0, 1], [0.5, 1]) }}
+                    style={{ scale: nopeStampScale }}
                   >
                     {t("card.nope")}
                   </motion.span>
@@ -264,7 +270,7 @@ export default function SwipeCard({
             {/* Action buttons */}
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-5 z-20">
               <motion.button
-                onClick={() => { setExiting("left"); setTimeout(() => onSwipeLeft(campaign.id), 300); }}
+                onClick={() => { exitDirection.current = "left"; setExiting("left"); setTimeout(() => onSwipeLeft(campaign.id), 400); }}
                 className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-2xl hover:bg-red-500/20 hover:border-red-500/50 transition-all"
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.85 }}
@@ -295,17 +301,25 @@ export default function SwipeCard({
               </motion.button>
 
               <motion.button
-                onClick={() => { setExiting("right"); if (walletConnected) like(campaign.id); setTimeout(() => onSwipeRight(campaign.id), 300); }}
-                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-2xl hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all"
+                onClick={() => {
+                  exitDirection.current = "right";
+                  setExiting("right");
+                  if (walletConnected && !alreadyLiked) like(campaign.id);
+                  setTimeout(() => onSwipeRight(campaign.id), 400);
+                }}
+                className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all ${
+                  alreadyLiked
+                    ? "bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400"
+                    : "bg-white/5 border border-white/10 hover:bg-emerald-500/20 hover:border-emerald-500/50"
+                }`}
                 whileHover={{ scale: 1.15 }}
                 whileTap={{ scale: 0.85 }}
+                title={alreadyLiked ? t("card.alreadyLiked") : t("card.like")}
               >
-                ♥
+                {alreadyLiked ? "✓" : "♥"}
               </motion.button>
             </div>
           </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Donate Panel */}
       <AnimatePresence>
