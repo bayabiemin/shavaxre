@@ -6,7 +6,13 @@
       "Bash(npx hardhat:*)",
       "Bash(npx next:*)",
       "Bash(npm run:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "WebFetch(domain:inversa.com)",
+      "WebSearch",
+      "Bash(mv:*)",
+      "Bash(rm:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(find:*)"
     ]
   }
 }

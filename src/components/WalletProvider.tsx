@@ -1,7 +1,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { connectWallet, switchToAvalanche } from "@/lib/contract";
+import { BrowserProvider } from "ethers";
+import { ensureFujiNetwork } from "@/lib/contract";
 
 interface WalletState {
     address: string | null;
@@ -36,11 +37,14 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const connect = useCallback(async () => {
         try {
             setIsConnecting(true);
-            await switchToAvalanche(true);
-            const wallet = await connectWallet();
-            setAddress(wallet.address);
-            setSigner(wallet.signer);
-            setProvider(wallet.provider);
+            if (!window.ethereum) throw new Error("Please install MetaMask or Core Wallet");
+            await ensureFujiNetwork();
+            const bp = new BrowserProvider(window.ethereum);
+            await bp.send("eth_requestAccounts", []);
+            const s = await bp.getSigner();
+            setAddress(await s.getAddress());
+            setSigner(s);
+            setProvider(bp);
         } catch (err) {
             console.error("Wallet connection failed:", err);
             alert(err instanceof Error ? err.message : "Connection failed");

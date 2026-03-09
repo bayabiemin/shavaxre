@@ -1,34 +1,41 @@
 import Link from "next/link";
+import { ethers } from "ethers";
 
 interface CampaignCardProps {
     id: number;
-    title: string;
-    description: string;
-    category: string;
-    goalAvax: string;
-    raisedAvax: string;
-    donorCount: number;
-    progress: number;
-    deadline: Date;
-    student: string;
+    creator: string;
+    metadataURI: string;
+    goalAmount: bigint;
+    totalRaised: bigint;
+    uniqueDonors: bigint;
+    likes: bigint;
+    status: number;
+    statusText: string;
+    createdAt: bigint;
+    // Optional resolved metadata
+    title?: string;
+    description?: string;
+    category?: string;
 }
 
 export default function CampaignCard({
     id,
+    creator,
+    goalAmount,
+    totalRaised,
+    uniqueDonors,
+    likes,
+    statusText,
     title,
     description,
     category,
-    goalAvax,
-    raisedAvax,
-    donorCount,
-    progress,
-    deadline,
-    student,
 }: CampaignCardProps) {
-    const daysLeft = Math.max(
-        0,
-        Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    );
+    const goalAvax = ethers.formatEther(goalAmount);
+    const raisedAvax = ethers.formatEther(totalRaised);
+    const goal = parseFloat(goalAvax);
+    const raised = parseFloat(raisedAvax);
+    const progress = goal > 0 ? Math.min((raised / goal) * 100, 100) : 0;
+    const donors = Number(uniqueDonors);
 
     const categoryIcons: Record<string, string> = {
         Tuition: "🎓",
@@ -39,59 +46,60 @@ export default function CampaignCard({
         Other: "✨",
     };
 
-    const clampedProgress = Math.min(progress, 100);
-
     return (
         <Link href={`/campaign/${id}`} className="campaign-card">
             {/* Progress bar — top of card, full width */}
             <div className="card-progress-bar-top">
                 <div
                     className="card-progress-fill-top"
-                    style={{ width: `${clampedProgress}%` }}
+                    style={{ width: `${progress}%` }}
                 />
             </div>
 
             <div className="card-body">
-                {/* Category + days */}
+                {/* Category + status */}
                 <div className="card-meta-row">
                     <span className="card-category">
-                        {categoryIcons[category] || "✨"} {category}
+                        {categoryIcons[category || "Other"] || "✨"} {category || "Campaign"}
                     </span>
                     <span className="card-days">
-                        {daysLeft > 0 ? `${daysLeft}d left` : "Ended"}
+                        {statusText}
                     </span>
                 </div>
 
                 {/* Title */}
-                <h3 className="card-title">{title}</h3>
+                <h3 className="card-title">{title || `Campaign #${id}`}</h3>
 
-                {/* Student address */}
+                {/* Creator address */}
                 <p className="card-student-mono">
-                    by {student.slice(0, 6)}…{student.slice(-4)}
+                    by {creator.slice(0, 6)}...{creator.slice(-4)}
                 </p>
 
                 {/* Description */}
-                <p className="card-description">
-                    {description.length > 90 ? description.slice(0, 90) + "…" : description}
-                </p>
+                {description && (
+                    <p className="card-description">
+                        {description.length > 90 ? description.slice(0, 90) + "..." : description}
+                    </p>
+                )}
 
                 {/* Amount + progress */}
                 <div className="card-amount-row">
-                    <span className="card-raised-big">{raisedAvax}</span>
-                    <span className="card-goal-small">/ {goalAvax} AVAX</span>
-                    <span className="card-pct">{clampedProgress.toFixed(0)}%</span>
+                    <span className="card-raised-big">{parseFloat(raisedAvax).toFixed(2)}</span>
+                    <span className="card-goal-small">/ {parseFloat(goalAvax).toFixed(2)} AVAX</span>
+                    <span className="card-pct">{progress.toFixed(0)}%</span>
                 </div>
 
                 <div className="card-progress-bar">
                     <div
                         className="card-progress-fill"
-                        style={{ width: `${clampedProgress}%` }}
+                        style={{ width: `${progress}%` }}
                     />
                 </div>
 
                 {/* Footer */}
                 <div className="card-footer">
-                    <span className="card-donors">👥 {donorCount} {donorCount === 1 ? "donor" : "donors"}</span>
+                    <span className="card-donors">👥 {donors} {donors === 1 ? "donor" : "donors"}</span>
+                    <span className="card-donors">❤️ {Number(likes)}</span>
                     <span className="card-donate-link">Donate Now →</span>
                 </div>
             </div>

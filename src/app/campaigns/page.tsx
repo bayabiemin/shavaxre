@@ -1,32 +1,27 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { JsonRpcProvider } from "ethers";
+import { ethers } from "ethers";
 import CampaignCard from "@/components/CampaignCard";
 import Link from "next/link";
 import SectionLabel from "@/components/SectionLabel";
-import { getActiveCampaigns, CampaignDisplay } from "@/lib/contract";
+import { fetchAllCampaigns, type CampaignData } from "@/hooks/useShavaxre";
 
-const FUJI_RPC = "https://api.avax-test.network/ext/bc/C/rpc";
-
-const CATEGORIES = ["All", "Tuition", "Books", "Research", "Equipment", "Scholarship", "Other"];
-
-type SortKey = "newest" | "most-funded" | "ending-soon";
+type SortKey = "newest" | "most-funded" | "most-donors";
 
 export default function CampaignsPage() {
-    const [campaigns, setCampaigns] = useState<CampaignDisplay[]>([]);
+    const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeCategory, setActiveCategory] = useState("All");
     const [sortBy, setSortBy] = useState<SortKey>("newest");
 
     useEffect(() => {
         async function load() {
             try {
                 setLoading(true);
-                const provider = new JsonRpcProvider(FUJI_RPC);
-                const data = await getActiveCampaigns(provider);
-                setCampaigns(data);
+                const all = await fetchAllCampaigns();
+                const active = all.filter(c => c.status === 0);
+                setCampaigns(active);
             } catch (err) {
                 console.error("Failed to load campaigns:", err);
                 setError("Could not load campaigns from blockchain.");
@@ -38,19 +33,16 @@ export default function CampaignsPage() {
     }, []);
 
     const filtered = useMemo(() => {
-        let list = activeCategory === "All"
-            ? [...campaigns]
-            : campaigns.filter(c => c.category === activeCategory);
-
+        const list = [...campaigns];
         if (sortBy === "newest") {
-            list = list.reverse();
+            list.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
         } else if (sortBy === "most-funded") {
-            list = list.sort((a, b) => parseFloat(b.raisedAvax) - parseFloat(a.raisedAvax));
-        } else if (sortBy === "ending-soon") {
-            list = list.sort((a, b) => a.deadline.getTime() - b.deadline.getTime());
+            list.sort((a, b) => Number(b.totalRaised - a.totalRaised));
+        } else if (sortBy === "most-donors") {
+            list.sort((a, b) => Number(b.uniqueDonors - a.uniqueDonors));
         }
         return list;
-    }, [campaigns, activeCategory, sortBy]);
+    }, [campaigns, sortBy]);
 
     return (
         <div className="page-container">
@@ -65,20 +57,8 @@ export default function CampaignsPage() {
                 </Link>
             </div>
 
-            {/* ── Filter & Sort bar ── */}
+            {/* ── Sort bar ── */}
             <div className="campaigns-controls">
-                <div className="category-filters">
-                    {CATEGORIES.map(cat => (
-                        <button
-                            key={cat}
-                            className={`cat-chip ${activeCategory === cat ? "active" : ""}`}
-                            onClick={() => setActiveCategory(cat)}
-                        >
-                            {cat}
-                        </button>
-                    ))}
-                </div>
-
                 <select
                     className="sort-select"
                     value={sortBy}
@@ -86,7 +66,7 @@ export default function CampaignsPage() {
                 >
                     <option value="newest">Sort: Newest</option>
                     <option value="most-funded">Sort: Most Funded</option>
-                    <option value="ending-soon">Sort: Ending Soon</option>
+                    <option value="most-donors">Sort: Most Donors</option>
                 </select>
             </div>
 
@@ -102,16 +82,10 @@ export default function CampaignsPage() {
 
             {!loading && !error && filtered.length === 0 && (
                 <div className="campaigns-empty">
-                    <p>No campaigns found{activeCategory !== "All" ? ` in "${activeCategory}"` : ""}.</p>
-                    {activeCategory !== "All" ? (
-                        <button onClick={() => setActiveCategory("All")} className="btn-secondary" style={{ marginTop: "1rem" }}>
-                            Clear Filter
-                        </button>
-                    ) : (
-                        <Link href="/create" className="btn-primary" style={{ marginTop: "1rem" }}>
-                            Be the first!
-                        </Link>
-                    )}
+                    <p>No campaigns found.</p>
+                    <Link href="/create" className="btn-primary" style={{ marginTop: "1rem" }}>
+                        Be the first!
+                    </Link>
                 </div>
             )}
 
@@ -119,7 +93,6 @@ export default function CampaignsPage() {
                 <>
                     <p className="campaigns-count">
                         {filtered.length} campaign{filtered.length !== 1 ? "s" : ""}
-                        {activeCategory !== "All" ? ` in ${activeCategory}` : ""}
                     </p>
                     <div className="campaigns-grid">
                         {filtered.map(campaign => (

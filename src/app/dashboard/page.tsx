@@ -2,21 +2,19 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { JsonRpcProvider, formatEther } from "ethers";
+import { ethers } from "ethers";
 import { useWallet } from "@/components/WalletProvider";
-import { getContract, getCampaignById, CampaignDisplay } from "@/lib/contract";
+import { getReadContract } from "@/lib/contract";
+import { fetchCampaign, type CampaignData } from "@/hooks/useShavaxre";
 import SectionLabel from "@/components/SectionLabel";
 
-const FUJI_RPC = "https://api.avax-test.network/ext/bc/C/rpc";
-
 interface DonorCampaign {
-    campaign: CampaignDisplay;
+    campaign: CampaignData;
     myDonation: string;
 }
 
 interface TxEvent {
     campaignId: number;
-    campaignTitle: string;
     amount: string;
     txHash: string;
 }
@@ -43,8 +41,7 @@ export default function DashboardPage() {
         async function load() {
             try {
                 setLoading(true);
-                const provider = new JsonRpcProvider(FUJI_RPC);
-                const contract = getContract(provider);
+                const contract = getReadContract();
 
                 const count = await contract.campaignCount();
                 const n = Number(count);
@@ -55,16 +52,16 @@ export default function DashboardPage() {
                 for (let i = 0; i < n; i++) {
                     const donation = await contract.getDonation(i, address);
                     if (donation > 0n) {
-                        const campaign = await getCampaignById(provider, i);
+                        const campaign = await fetchCampaign(i);
                         found.push({
                             campaign,
-                            myDonation: parseFloat(formatEther(donation)).toFixed(4),
+                            myDonation: parseFloat(ethers.formatEther(donation)).toFixed(4),
                         });
                         totalDonatedWei += donation;
                     }
                 }
 
-                const totalDonated = parseFloat(formatEther(totalDonatedWei));
+                const totalDonated = parseFloat(ethers.formatEther(totalDonatedWei));
                 const campaignsSupported = found.length;
                 const impactScore = Math.floor(totalDonated * 100 + campaignsSupported * 50);
                 const avgDonation = campaignsSupported > 0 ? totalDonated / campaignsSupported : 0;
@@ -72,33 +69,24 @@ export default function DashboardPage() {
                 setDonorCampaigns(found);
                 setStats({ totalDonated, campaignsSupported, impactScore, avgDonation });
 
-                // Event query ayrı try-catch — başarısız olursa dashboard yine gösterilir
+                // Event query in separate try-catch
                 try {
-                    const currentBlock = await provider.getBlockNumber();
-                    const fromBlock = Math.max(0, currentBlock - 5000);
-                    const filter = contract.filters.DonationReceived(null, address);
-                    const events = await contract.queryFilter(filter, fromBlock, currentBlock);
+                    const provider = contract.runner?.provider;
+                    if (provider && 'getBlockNumber' in provider) {
+                        const rpcProvider = provider as ethers.JsonRpcProvider;
+                        const currentBlock = await rpcProvider.getBlockNumber();
+                        const fromBlock = Math.max(0, currentBlock - 5000);
+                        const filter = contract.filters.Donated(null, address);
+                        const events = await contract.queryFilter(filter, fromBlock, currentBlock);
 
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    const txs: TxEvent[] = await Promise.all(
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        [...events].reverse().slice(0, 10).map(async (e: any) => {
-                            const campaignId = Number(e.args[0]);
-                            const amount = formatEther(e.args[2]);
-                            let campaignTitle = `Campaign #${campaignId}`;
-                            try {
-                                const c = await getCampaignById(provider, campaignId);
-                                campaignTitle = c.title;
-                            } catch { /* ignore */ }
-                            return {
-                                campaignId,
-                                campaignTitle,
-                                amount: parseFloat(amount).toFixed(4),
-                                txHash: e.transactionHash,
-                            };
-                        })
-                    );
-                    setRecentTxs(txs);
+                        const txs: TxEvent[] = [...events].reverse().slice(0, 10).map((e: any) => ({
+                            campaignId: Number(e.args[0]),
+                            amount: parseFloat(ethers.formatEther(e.args[2])).toFixed(4),
+                            txHash: e.transactionHash,
+                        }));
+                        setRecentTxs(txs);
+                    }
                 } catch (eventErr) {
                     console.warn("Could not load donation events:", eventErr);
                 }
@@ -188,9 +176,9 @@ export default function DashboardPage() {
                         </div>
                         {donorCampaigns.map(({ campaign, myDonation }) => (
                             <div key={campaign.id} className="dash-table-row">
-                                <span className="dash-row-title">{campaign.title}</span>
-                                <span className={`dash-row-status ${campaign.active ? "status-active" : campaign.claimed ? "status-claimed" : "status-ended"}`}>
-                                    {campaign.active ? "Active" : campaign.claimed ? "Claimed" : "Ended"}
+                                <span className="dash-row-title">Campaign #{campaign.id}</span>
+                                <span className={`dash-row-status ${campaign.status === 0 ? "status-active" : campaign.status === 3 ? "status-claimed" : "status-ended"}`}>
+                                    {campaign.statusText}
                                 </span>
                                 <span className="dash-row-amount">{myDonation} AVAX</span>
                                 <Link href={`/campaign/${campaign.id}`} className="dash-row-link">
@@ -212,8 +200,8 @@ export default function DashboardPage() {
                                 <span className="dash-tx-dot" />
                                 <div className="dash-tx-info">
                                     <span className="dash-tx-amount">{tx.amount} AVAX</span>
-                                    <span className="dash-tx-arrow">→</span>
-                                    <span className="dash-tx-title">{tx.campaignTitle}</span>
+                                    <span className="dash-tx-arrow">&rarr;</span>
+                                    <span className="dash-tx-title">Campaign #{tx.campaignId}</span>
                                 </div>
                                 <a
                                     href={`https://testnet.snowtrace.io/tx/${tx.txHash}`}

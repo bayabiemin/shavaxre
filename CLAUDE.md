@@ -17,7 +17,7 @@ Sha(vax)re, Avalanche C-Chain üzerinde çalışan merkeziyetsiz bir eğitim cro
 | Wallet | MetaMask / Core Wallet |
 
 ## Deployed Contract
-- **Address:** `0xfaDa353b9300Fc82B72a25B7E59867f4D0376cbd`
+- **Address:** `0x6E1EB557c63F46880Fc3e7A4C073b9eb4360e2A0`
 - **Network:** Avalanche Fuji Testnet (Chain ID: 43113)
 - **Explorer:** https://testnet.snowtrace.io/address/0xfaDa353b9300Fc82B72a25B7E59867f4D0376cbd
 

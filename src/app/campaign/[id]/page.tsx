@@ -3,19 +3,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { JsonRpcProvider, formatEther } from "ethers";
+import { ethers } from "ethers";
 import { useWallet } from "@/components/WalletProvider";
+import { CONTRACT_ADDRESS, getReadContract } from "@/lib/contract";
 import {
-    getCampaignById,
-    donateToCampaign,
-    claimCampaignFunds,
-    CampaignDisplay,
-    CONTRACT_ADDRESS,
-    getContract,
-} from "@/lib/contract";
+    fetchCampaign,
+    useDonate,
+    type CampaignData,
+} from "@/hooks/useShavaxre";
 import SectionLabel from "@/components/SectionLabel";
-
-const FUJI_RPC = "https://api.avax-test.network/ext/bc/C/rpc";
 
 // CSS-only confetti (no external lib)
 function ConfettiEffect() {
@@ -38,17 +34,6 @@ function ConfettiEffect() {
     );
 }
 
-const categoryIcons: Record<string, string> = {
-    Tuition: "🎓",
-    Books: "📚",
-    Research: "🔬",
-    Housing: "🏠",
-    Technology: "💻",
-    Equipment: "🔧",
-    Scholarship: "🏆",
-    Other: "✨",
-};
-
 const quickAmounts = ["0.1", "0.5", "1.0", "2.0"];
 
 interface DonationEvent {
@@ -58,47 +43,17 @@ interface DonationEvent {
     blockNumber: number;
 }
 
-function Countdown({ deadline }: { deadline: Date }) {
-    const [timeLeft, setTimeLeft] = useState("");
-
-    useEffect(() => {
-        function update() {
-            const diff = deadline.getTime() - Date.now();
-            if (diff <= 0) { setTimeLeft("Ended"); return; }
-            const d = Math.floor(diff / 86400000);
-            const h = Math.floor((diff % 86400000) / 3600000);
-            const m = Math.floor((diff % 3600000) / 60000);
-            if (d > 0) setTimeLeft(`${d}d ${h}h left`);
-            else if (h > 0) setTimeLeft(`${h}h ${m}m left`);
-            else setTimeLeft(`${m}m left`);
-        }
-        update();
-        const id = setInterval(update, 60000);
-        return () => clearInterval(id);
-    }, [deadline]);
-
-    return <span>{timeLeft}</span>;
-}
-
 export default function CampaignDetailPage() {
     const params = useParams();
     const id = Number(params.id);
-    const { signer, address, isConnected, connect } = useWallet();
+    const { address, isConnected, connect } = useWallet();
+    const { donate: doDonate, isPending: isDonating, isConfirming, isSuccess: donateSuccess, hash: txHash, error: donateError } = useDonate();
 
-    const [campaign, setCampaign] = useState<CampaignDisplay | null>(null);
+    const [campaign, setCampaign] = useState<CampaignData | null>(null);
     const [loading, setLoading] = useState(true);
     const [notFound, setNotFound] = useState(false);
 
     const [donateAmount, setDonateAmount] = useState("");
-    const [isDonating, setIsDonating] = useState(false);
-    const [txHash, setTxHash] = useState<string | null>(null);
-    const [donateError, setDonateError] = useState<string | null>(null);
-
-    const [isClaiming, setIsClaiming] = useState(false);
-    const [claimTxHash, setClaimTxHash] = useState<string | null>(null);
-    const [claimError, setClaimError] = useState<string | null>(null);
-
-    const [donationTime, setDonationTime] = useState<number | null>(null);
     const [confetti, setConfetti] = useState(false);
 
     const [donors, setDonors] = useState<DonationEvent[]>([]);
@@ -107,25 +62,27 @@ export default function CampaignDetailPage() {
     const loadCampaign = useCallback(async () => {
         try {
             setLoading(true);
-            const provider = new JsonRpcProvider(FUJI_RPC);
-            const data = await getCampaignById(provider, id);
+            const data = await fetchCampaign(id);
             setCampaign(data);
 
-            // Event query ayrı try-catch — başarısız olursa kampanya yine gösterilir
+            // Event query in separate try-catch
             try {
-                const contract = getContract(provider);
-                const currentBlock = await provider.getBlockNumber();
-                const fromBlock = Math.max(0, currentBlock - 5000);
-                const filter = contract.filters.DonationReceived(id);
-                const events = await contract.queryFilter(filter, fromBlock, currentBlock);
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const parsed: DonationEvent[] = [...events].reverse().slice(0, 5).map((e: any) => ({
-                    donor: e.args[1] as string,
-                    amount: parseFloat(formatEther(e.args[2])).toFixed(4),
-                    txHash: e.transactionHash,
-                    blockNumber: e.blockNumber,
-                }));
-                setDonors(parsed);
+                const contract = getReadContract();
+                const provider = contract.runner?.provider;
+                if (provider && 'getBlockNumber' in provider) {
+                    const currentBlock = await (provider as ethers.JsonRpcProvider).getBlockNumber();
+                    const fromBlock = Math.max(0, currentBlock - 5000);
+                    const filter = contract.filters.Donated(id);
+                    const events = await contract.queryFilter(filter, fromBlock, currentBlock);
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const parsed: DonationEvent[] = [...events].reverse().slice(0, 5).map((e: any) => ({
+                        donor: e.args[1] as string,
+                        amount: parseFloat(ethers.formatEther(e.args[2])).toFixed(4),
+                        txHash: e.transactionHash,
+                        blockNumber: e.blockNumber,
+                    }));
+                    setDonors(parsed);
+                }
             } catch (eventErr) {
                 console.warn("Could not load donation events:", eventErr);
             }
@@ -141,49 +98,20 @@ export default function CampaignDetailPage() {
         else setNotFound(true);
     }, [id, loadCampaign]);
 
-    const handleDonate = async () => {
-        if (!isConnected || !signer) { await connect(); return; }
-        if (!donateAmount || parseFloat(donateAmount) <= 0) {
-            setDonateError("Please enter a valid amount.");
-            return;
-        }
-        try {
-            setIsDonating(true);
-            setDonateError(null);
-            setTxHash(null);
-            const t0 = Date.now();
-            const receipt = await donateToCampaign(signer, id, donateAmount);
-            const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
-            setTxHash(receipt.hash);
-            setDonationTime(parseFloat(elapsed));
+    // Show confetti on successful donation
+    useEffect(() => {
+        if (donateSuccess) {
             setConfetti(true);
-            setTimeout(() => setConfetti(false), 3500);
             setDonateAmount("");
-            await loadCampaign();
-        } catch (err: unknown) {
-            const e = err as { reason?: string; message?: string };
-            const msg = e?.reason || e?.message || "Transaction failed.";
-            setDonateError(msg.length > 120 ? msg.slice(0, 120) + "…" : msg);
-        } finally {
-            setIsDonating(false);
+            loadCampaign();
+            setTimeout(() => setConfetti(false), 3500);
         }
-    };
+    }, [donateSuccess, loadCampaign]);
 
-    const handleClaim = async () => {
-        if (!isConnected || !signer) { await connect(); return; }
-        try {
-            setIsClaiming(true);
-            setClaimError(null);
-            const receipt = await claimCampaignFunds(signer, id);
-            setClaimTxHash(receipt.hash);
-            await loadCampaign();
-        } catch (err: unknown) {
-            const e = err as { reason?: string; message?: string };
-            const msg = e?.reason || e?.message || "Claim failed.";
-            setClaimError(msg.length > 120 ? msg.slice(0, 120) + "…" : msg);
-        } finally {
-            setIsClaiming(false);
-        }
+    const handleDonate = async () => {
+        if (!isConnected) { await connect(); return; }
+        if (!donateAmount || parseFloat(donateAmount) <= 0) return;
+        await doDonate(id, ethers.parseEther(donateAmount));
     };
 
     const handleCopyLink = () => {
@@ -192,16 +120,6 @@ export default function CampaignDetailPage() {
             setTimeout(() => setCopied(false), 2000);
         });
     };
-
-    const tweetText = campaign
-        ? `I just supported "${campaign.title}" on @ShavaxreApp 🔴\nZero commission, direct to students on @avaborlabs Avalanche.\n\nFund education → ${window?.location?.href}`
-        : "";
-
-    const linkedInUrl = campaign
-        ? `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`
-        : "#";
-
-    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
 
     if (loading) {
         return (
@@ -225,46 +143,44 @@ export default function CampaignDetailPage() {
         );
     }
 
-    const isExpired = campaign.deadline.getTime() < Date.now();
-    const isOwner = address && address.toLowerCase() === campaign.student.toLowerCase();
-    const canClaim = isOwner && !campaign.claimed && (campaign.progress >= 100 || isExpired);
-    const avgDonation = campaign.donorCount > 0
-        ? (parseFloat(campaign.raisedAvax) / campaign.donorCount).toFixed(4)
-        : "0.0000";
+    const goalAvax = ethers.formatEther(campaign.goalAmount);
+    const raisedAvax = ethers.formatEther(campaign.totalRaised);
+    const progress = parseFloat(goalAvax) > 0 ? Math.min((parseFloat(raisedAvax) / parseFloat(goalAvax)) * 100, 100) : 0;
+    const isOwner = address && address.toLowerCase() === campaign.creator.toLowerCase();
+    const donorCount = Number(campaign.uniqueDonors);
+    const avgDonation = donorCount > 0 ? (parseFloat(raisedAvax) / donorCount).toFixed(4) : "0.0000";
+
+    const tweetText = `I just supported a campaign on @ShavaxreApp\nZero commission, direct to students on @avaborlabs Avalanche.\n\nFund education → ${typeof window !== "undefined" ? window.location.href : "shavaxre.vercel.app"}`;
+    const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}`;
+    const linkedInUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`;
 
     return (
         <div className="page-container">
             {/* Back link */}
-            <Link href="/campaigns" className="detail-back">← Back to Campaigns</Link>
+            <Link href="/campaigns" className="detail-back">&larr; Back to Campaigns</Link>
 
             <div className="campaign-detail">
                 {/* ── Left Column ── */}
                 <div className="detail-main">
                     <div className="detail-header">
                         <span className="detail-category">
-                            {categoryIcons[campaign.category] || "✨"} {campaign.category}
+                            🎓 Campaign #{id}
                         </span>
-                        <span className={`detail-days ${isExpired ? "ended" : ""}`}>
-                            {isExpired ? "Ended" : <><span className="detail-days-dot" /><Countdown deadline={campaign.deadline} /></>}
+                        <span className={`detail-days ${campaign.status !== 0 ? "ended" : ""}`}>
+                            {campaign.statusText}
                         </span>
                     </div>
 
-                    <h1 className="detail-title">{campaign.title}</h1>
+                    <h1 className="detail-title">Campaign #{id}</h1>
 
                     <div className="detail-student">
                         <div className="student-avatar">
-                            {campaign.student.slice(2, 4).toUpperCase()}
+                            {campaign.creator.slice(2, 4).toUpperCase()}
                         </div>
                         <div>
                             <p className="student-label">Created by</p>
-                            <p className="student-address">{campaign.student}</p>
+                            <p className="student-address">{campaign.creator}</p>
                         </div>
-                    </div>
-
-                    {/* About */}
-                    <div className="detail-description">
-                        <h3>About this Campaign</h3>
-                        <p>{campaign.description}</p>
                     </div>
 
                     {/* Campaign Stats */}
@@ -273,19 +189,19 @@ export default function CampaignDetailPage() {
                         <div className="detail-stats-grid">
                             <div className="detail-stat-item">
                                 <span className="ds-label">Donors</span>
-                                <span className="ds-value">{campaign.donorCount}</span>
+                                <span className="ds-value">{donorCount}</span>
                             </div>
                             <div className="detail-stat-item">
                                 <span className="ds-label">Avg Donation</span>
                                 <span className="ds-value">{avgDonation} AVAX</span>
                             </div>
                             <div className="detail-stat-item">
-                                <span className="ds-label">Deadline</span>
-                                <span className="ds-value">{campaign.deadline.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</span>
+                                <span className="ds-label">Likes</span>
+                                <span className="ds-value">{Number(campaign.likes)}</span>
                             </div>
                             <div className="detail-stat-item">
                                 <span className="ds-label">Progress</span>
-                                <span className="ds-value">{campaign.progress.toFixed(1)}%</span>
+                                <span className="ds-value">{progress.toFixed(1)}%</span>
                             </div>
                         </div>
                     </div>
@@ -323,7 +239,7 @@ export default function CampaignDetailPage() {
                                 {donors.map((d, i) => (
                                     <div key={i} className="donor-row">
                                         <span className="donor-address">
-                                            {d.donor.slice(0, 6)}…{d.donor.slice(-4)}
+                                            {d.donor.slice(0, 6)}...{d.donor.slice(-4)}
                                         </span>
                                         <span className="donor-amount">{d.amount} AVAX</span>
                                         <a href={`https://testnet.snowtrace.io/tx/${d.txHash}`} target="_blank" rel="noreferrer" className="donor-tx">
@@ -347,7 +263,7 @@ export default function CampaignDetailPage() {
                                 Twitter / X
                             </a>
                             <button onClick={handleCopyLink} className="share-btn share-copy">
-                                {copied ? "✓ Copied!" : "Copy Link"}
+                                {copied ? "Copied!" : "Copy Link"}
                             </button>
                             <a href={linkedInUrl} target="_blank" rel="noreferrer" className="share-btn share-linkedin">
                                 LinkedIn
@@ -362,30 +278,25 @@ export default function CampaignDetailPage() {
                         {/* Progress */}
                         <div className="donate-progress">
                             <div className="donate-amounts">
-                                <span className="donate-raised">{campaign.raisedAvax} AVAX</span>
-                                <span className="donate-goal">of {campaign.goalAvax} AVAX</span>
+                                <span className="donate-raised">{parseFloat(raisedAvax).toFixed(2)} AVAX</span>
+                                <span className="donate-goal">of {parseFloat(goalAvax).toFixed(2)} AVAX</span>
                             </div>
                             <div className="donate-bar">
-                                <div className="donate-bar-fill" style={{ width: `${campaign.progress}%` }} />
+                                <div className="donate-bar-fill" style={{ width: `${progress}%` }} />
                             </div>
                             <div className="donate-meta">
-                                <span>👥 {campaign.donorCount} donors</span>
-                                <span>{campaign.progress.toFixed(1)}% funded</span>
+                                <span>👥 {donorCount} donors</span>
+                                <span>{progress.toFixed(1)}% funded</span>
                             </div>
                         </div>
 
                         {/* Rich success state */}
-                        {txHash && campaign && (
+                        {txHash && (
                             <div className="donation-success-card">
                                 {confetti && <ConfettiEffect />}
                                 <div className="success-tick">✓</div>
                                 <h4>Thank you! 🎉</h4>
                                 <p>Your donation is confirmed on Avalanche.</p>
-                                {donationTime !== null && (
-                                    <div className="success-finality">
-                                        ⚡ Confirmed in {donationTime}s on Avalanche
-                                    </div>
-                                )}
                                 <a
                                     href={`https://testnet.snowtrace.io/tx/${txHash}`}
                                     target="_blank"
@@ -393,15 +304,6 @@ export default function CampaignDetailPage() {
                                     className="success-tx-link"
                                 >
                                     View tx on Snowtrace ↗
-                                </a>
-                                <a
-                                    href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(`I just donated to "${campaign.title}" on @ShavaxreApp 🔴\nZero commission, direct to students on Avalanche.\n\nFund education → shavaxre.vercel.app`)}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="success-tweet-btn"
-                                >
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.254 5.622L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
-                                    Share on Twitter / X
                                 </a>
                             </div>
                         )}
@@ -412,7 +314,7 @@ export default function CampaignDetailPage() {
                         )}
 
                         {/* Donate form */}
-                        {!isExpired && (
+                        {campaign.status === 0 && (
                             <div className="donate-form">
                                 <label>Donation Amount (AVAX)</label>
                                 <div className="donate-input-wrap">
@@ -422,7 +324,7 @@ export default function CampaignDetailPage() {
                                         min="0.01"
                                         placeholder="0.00"
                                         value={donateAmount}
-                                        disabled={isDonating}
+                                        disabled={isDonating || isConfirming}
                                         onChange={(e) => setDonateAmount(e.target.value)}
                                     />
                                     <span className="input-suffix">AVAX</span>
@@ -435,7 +337,7 @@ export default function CampaignDetailPage() {
                                             type="button"
                                             className={`quick-btn ${donateAmount === amt ? "active" : ""}`}
                                             onClick={() => setDonateAmount(amt)}
-                                            disabled={isDonating}
+                                            disabled={isDonating || isConfirming}
                                         >
                                             {amt}
                                         </button>
@@ -445,54 +347,31 @@ export default function CampaignDetailPage() {
                                 <button
                                     onClick={handleDonate}
                                     className="btn-primary btn-full"
-                                    disabled={isDonating}
+                                    disabled={isDonating || isConfirming}
                                 >
                                     {!isConnected
                                         ? "Connect Wallet to Donate"
                                         : isDonating
-                                            ? "Confirming on-chain..."
-                                            : `Donate ${donateAmount || "0"} AVAX`}
+                                            ? "Confirm in wallet..."
+                                            : isConfirming
+                                                ? "Confirming on-chain..."
+                                                : `Donate ${donateAmount || "0"} AVAX`}
                                 </button>
 
                                 <p className="donate-note">
-                                    Funds go directly to the student&apos;s wallet. Zero fees. Fully transparent.
+                                    Funds go directly to the smart contract. Zero fees. Fully transparent.
                                 </p>
                             </div>
                         )}
 
-                        {isExpired && !canClaim && (
+                        {campaign.status !== 0 && (
                             <p className="donate-note" style={{ textAlign: "center", paddingTop: "0.5rem" }}>
-                                This campaign has ended.
+                                This campaign is {campaign.statusText.toLowerCase()}.
                             </p>
                         )}
 
-                        {/* Claim funds — owner only */}
-                        {canClaim && (
-                            <div className="claim-section">
-                                <div className="claim-label">
-                                    <span>🎉</span> You can now claim your funds!
-                                </div>
-                                {claimTxHash && (
-                                    <div className="tx-success" style={{ marginBottom: "0.75rem" }}>
-                                        ✅ Claimed!{" "}
-                                        <a href={`https://testnet.snowtrace.io/tx/${claimTxHash}`} target="_blank" rel="noreferrer">
-                                            View tx ↗
-                                        </a>
-                                    </div>
-                                )}
-                                {claimError && <div className="tx-error" style={{ marginBottom: "0.75rem" }}>⚠️ {claimError}</div>}
-                                <button
-                                    onClick={handleClaim}
-                                    className="btn-primary btn-full"
-                                    disabled={isClaiming}
-                                >
-                                    {isClaiming ? "Processing…" : `Claim ${campaign.raisedAvax} AVAX`}
-                                </button>
-                            </div>
-                        )}
-
-                        {isOwner && campaign.claimed && (
-                            <div className="tx-success">✅ Funds have been claimed.</div>
+                        {isOwner && campaign.status === 3 && (
+                            <div className="tx-success">✓ Campaign completed successfully.</div>
                         )}
                     </div>
                 </div>

@@ -1,10 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { JsonRpcProvider, formatEther } from "ethers";
-import { getContract } from "@/lib/contract";
+import { formatEther } from "ethers";
+import { getReadContract } from "@/lib/contract";
 
-const FUJI_RPC = "https://api.avax-test.network/ext/bc/C/rpc";
 const MAX_TOASTS = 3;
 
 interface Toast {
@@ -19,8 +18,7 @@ export default function DonationToast() {
     const [toasts, setToasts] = useState<Toast[]>([]);
 
     useEffect(() => {
-        const provider = new JsonRpcProvider(FUJI_RPC);
-        const contract = getContract(provider);
+        const contract = getReadContract();
         let counter = 0;
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,8 +47,8 @@ export default function DonationToast() {
             }, 5000);
         };
 
-        contract.on("DonationReceived", handler);
-        return () => { contract.off("DonationReceived", handler); };
+        contract.on("Donated", handler);
+        return () => { contract.off("Donated", handler); };
     }, []);
 
     if (toasts.length === 0) return null;
