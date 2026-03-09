@@ -41,7 +41,8 @@ export default function CreatePage() {
         const file = e.target.files?.[0];
         if (!file) return;
 
-        if (file.size > 5 * 1024 * 1024) {
+        // Limit 20MB — we compress before storing, so raw size is fine
+        if (file.size > 20 * 1024 * 1024) {
             setModerationResult({ safe: false, reason: t("create.imageTooLarge") });
             return;
         }
@@ -56,10 +57,15 @@ export default function CreatePage() {
 
         const reader = new FileReader();
         reader.onload = async (event) => {
-            const dataUrl = event.target?.result as string;
-            setImagePreview(dataUrl);
+            const rawDataUrl = event.target?.result as string;
 
-            const base64 = dataUrl.split(",")[1];
+            // Compress to display quality (900px) for preview & storage
+            const storageImage = await compressImage(rawDataUrl, 900, 0.82);
+            setImagePreview(storageImage);
+
+            // Compress smaller for AI moderation API payload
+            const modImage = await compressImage(rawDataUrl, 600, 0.72);
+            const base64 = modImage.split(",")[1];
             setImageBase64(base64);
 
             // AI Moderation
@@ -68,7 +74,7 @@ export default function CreatePage() {
                 const res = await fetch("/api/moderate", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ image: base64, mimeType: file.type }),
+                    body: JSON.stringify({ image: base64, mimeType: "image/webp" }),
                 });
                 const result = await res.json();
                 setModerationResult(result);
@@ -98,6 +104,23 @@ export default function CreatePage() {
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
+    // Compress image — default 900px, 0.82 quality for good Retina display
+    const compressImage = (dataUrl: string, maxWidth = 900, quality = 0.82): Promise<string> => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement("canvas");
+                const ratio = Math.min(maxWidth / img.width, maxWidth / img.height, 1);
+                canvas.width = img.width * ratio;
+                canvas.height = img.height * ratio;
+                const ctx = canvas.getContext("2d")!;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL("image/webp", quality));
+            };
+            img.src = dataUrl;
+        });
+    };
+
     // ── Form Submit ───────────────────────────────────────────
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -108,12 +131,8 @@ export default function CreatePage() {
             return;
         }
 
-        let imageUrl = "";
-        if (imagePreview) {
-            const tempKey = `shavaxre_img_pending`;
-            try { localStorage.setItem(tempKey, imagePreview); } catch {}
-            imageUrl = `local://${tempKey}`;
-        }
+        // imagePreview is already compressed at 900px/0.82q during upload
+        const imageUrl = imagePreview ?? "";
 
         const metadata: Record<string, unknown> = {
             title: formData.title,

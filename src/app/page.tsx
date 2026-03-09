@@ -250,7 +250,14 @@ export default function Home() {
       </section>
 
       {/* ══════ LEADERBOARD ══════ */}
-      <RevealSection className="leaderboard-section">
+      {/* Not using RevealSection here to avoid y-shift layout bounce */}
+      <motion.section
+        className="leaderboard-section"
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true, margin: "-60px" }}
+        transition={{ duration: 0.7 }}
+      >
         <span className="section-label">{t("leader.label")}</span>
         <h2 className="leaderboard-title">
           {t("leader.title")} <span style={{ color: "var(--accent)" }}>{t("leader.titleAccent")}</span>
@@ -294,7 +301,7 @@ export default function Home() {
             </>
           )}
         </div>
-      </RevealSection>
+      </motion.section>
 
       {/* ══════ AVAX-STYLE BANNER — full-width red strip ══════ */}
       <RevealSection className="avax-banner">

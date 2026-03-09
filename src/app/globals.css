@@ -1755,6 +1755,8 @@ input, textarea, select { font-family: var(--font-body); }
 
 .leaderboard-table {
   max-width: 680px;
+  /* min-height prevents layout shifts during async load */
+  min-height: 220px;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   overflow: hidden;
