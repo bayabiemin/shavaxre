@@ -131,8 +131,18 @@ export default function CreatePage() {
             return;
         }
 
-        // imagePreview is already compressed at 900px/0.82q during upload
-        const imageUrl = imagePreview ?? "";
+        // Store the compressed image in localStorage — never embed base64 in calldata
+        // (a 900px WebP is ~200-400 KB of calldata, which exhausts gas limits)
+        let imageUrl = "";
+        if (imagePreview) {
+            const imageKey = `campaign_img_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+            try {
+                localStorage.setItem(imageKey, imagePreview);
+                imageUrl = `local://${imageKey}`;
+            } catch {
+                // localStorage quota exceeded — proceed without image
+            }
+        }
 
         const metadata: Record<string, unknown> = {
             title: formData.title,

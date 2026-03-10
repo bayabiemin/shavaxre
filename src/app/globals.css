@@ -751,6 +751,11 @@ input, textarea, select { font-family: var(--font-body); }
   position: relative;
 }
 
+.how-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+}
+
 .how-title {
   font-family: var(--font-display);
   font-size: var(--text-section);
@@ -766,7 +771,6 @@ input, textarea, select { font-family: var(--font-body); }
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 1.25rem;
-  max-width: 1080px;
 }
 
 .how-card {
@@ -847,7 +851,7 @@ input, textarea, select { font-family: var(--font-body); }
   background: var(--bg-primary);
 }
 
-.comparison-inner { max-width: 960px; }
+.comparison-inner { max-width: 960px; margin: 0 auto; }
 
 .comparison-header { margin-bottom: 4rem; }
 .comparison-header h2 {
@@ -1734,6 +1738,12 @@ input, textarea, select { font-family: var(--font-body); }
 .leaderboard-section {
   padding: 8rem var(--section-pad);
   background: var(--bg-secondary);
+  max-width: 100%;
+}
+
+.leaderboard-inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
 }
 
 .leaderboard-title {
@@ -1755,6 +1765,7 @@ input, textarea, select { font-family: var(--font-body); }
 
 .leaderboard-table {
   max-width: 680px;
+  margin: 0 auto;
   /* min-height prevents layout shifts during async load */
   min-height: 220px;
   border: 1px solid var(--border);

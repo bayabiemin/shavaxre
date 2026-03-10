@@ -269,6 +269,7 @@ export default function Home() {
         viewport={{ once: true, margin: "-60px" }}
         transition={{ duration: 0.7 }}
       >
+        <div className="leaderboard-inner">
         <span className="section-label">{t("leader.label")}</span>
         <h2 className="leaderboard-title">
           {t("leader.title")} <span style={{ color: "var(--accent)" }}>{t("leader.titleAccent")}</span>
@@ -311,6 +312,7 @@ export default function Home() {
               ))}
             </>
           )}
+        </div>
         </div>
       </motion.section>
 
@@ -355,27 +357,29 @@ export default function Home() {
 
       {/* ══════ HOW IT WORKS — avax-style numbered cards ══════ */}
       <RevealSection className="how-section">
-        <span className="section-label">{t("how.label")}</span>
-        <h2 className="how-title">
-          {t("how.title")} <span style={{ color: "var(--accent)" }}>{t("how.titleAccent")}</span> {t("how.titleEnd")}
-        </h2>
-        <div className="how-grid">
-          {STEPS.map((step, i) => (
-            <motion.div
-              key={step.num}
-              className="how-card"
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.12, duration: 0.8, ease: EASE_OUT }}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-            >
-              <div className="how-card-num">{step.num}</div>
-              <div className="how-card-icon">{step.icon}</div>
-              <h3 className="how-card-title">{step.title}</h3>
-              <p className="how-card-desc">{step.desc}</p>
-            </motion.div>
-          ))}
+        <div className="how-inner">
+          <span className="section-label">{t("how.label")}</span>
+          <h2 className="how-title">
+            {t("how.title")} <span style={{ color: "var(--accent)" }}>{t("how.titleAccent")}</span> {t("how.titleEnd")}
+          </h2>
+          <div className="how-grid">
+            {STEPS.map((step, i) => (
+              <motion.div
+                key={step.num}
+                className="how-card"
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.12, duration: 0.8, ease: EASE_OUT }}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+              >
+                <div className="how-card-num">{step.num}</div>
+                <div className="how-card-icon">{step.icon}</div>
+                <h3 className="how-card-title">{step.title}</h3>
+                <p className="how-card-desc">{step.desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </RevealSection>
 
