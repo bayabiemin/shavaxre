@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude / tool artifacts
+.claude/
+.playwright-mcp/
+BUGFIX-GUIDE.md
