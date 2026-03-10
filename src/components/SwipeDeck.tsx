@@ -6,9 +6,37 @@ import SwipeCard, { type SwipeableCampaign } from "./SwipeCard";
 import { fetchTrendingCampaigns, checkHasLiked } from "../hooks/useShavaxre";
 import { useLang } from "@/contexts/LangContext";
 
+export const CARD_H = 560; // shared card height constant
+const DECK_H = CARD_H + 28;
+
 interface SwipeDeckProps {
   walletConnected: boolean;
   walletAddress?: string;
+}
+
+/* ── localStorage helpers for persisting swiped campaign IDs ── */
+const SWIPED_KEY = "shavaxre_swiped";
+
+function getSwipedIds(): Set<number> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(SWIPED_KEY);
+    return raw ? new Set(JSON.parse(raw) as number[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function markSwiped(id: number) {
+  if (typeof window === "undefined") return;
+  try {
+    const ids = getSwipedIds();
+    ids.add(id);
+    localStorage.setItem(SWIPED_KEY, JSON.stringify([...ids]));
+  } catch {}
+}
+
+function clearSwiped() {
+  if (typeof window === "undefined") return;
+  try { localStorage.removeItem(SWIPED_KEY); } catch {}
 }
 
 async function resolveMetadata(uri: string) {
@@ -53,14 +81,15 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           return { ...c, ...meta } as SwipeableCampaign;
         })
       );
-      setCampaigns(enriched);
+      // Filter out already-swiped campaigns so they don't come back
+      const unseen = enriched.filter(c => !getSwipedIds().has(c.id));
+      setCampaigns(unseen);
     } catch (e) { console.error("Load error:", e); }
     finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadCampaigns(); }, [loadCampaigns]);
 
-  // Check which campaigns the wallet already liked (on-chain)
   useEffect(() => {
     if (!walletAddress || campaigns.length === 0) return;
     const check = async () => {
@@ -70,7 +99,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
           try {
             const has = await checkHasLiked(c.id, walletAddress);
             if (has) liked.add(c.id);
-          } catch { /* contract may not have hasLiked yet */ }
+          } catch {}
         })
       );
       setLikedIds(liked);
@@ -78,91 +107,83 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
     check();
   }, [walletAddress, campaigns]);
 
-  const next = useCallback(() => setCurrentIndex((p) => p + 1), []);
-
-  const handleLikeAndNext = useCallback((campaignId: number) => {
-    setLikedIds((prev) => new Set(prev).add(campaignId));
-    setCurrentIndex((p) => p + 1);
+  // Mark swiped in localStorage so it won't appear again after page refresh
+  const next = useCallback((campaignId: number) => {
+    markSwiped(campaignId);
+    setCurrentIndex(p => p + 1);
   }, []);
 
-  /* ── Determine which view to show ── */
-  const showLoading = loading;
-  const showEmpty = !loading && campaigns.length === 0;
-  const showDone = !loading && campaigns.length > 0 && currentIndex >= campaigns.length;
-  const showCards = !loading && campaigns.length > 0 && currentIndex < campaigns.length;
+  const handleLikeAndNext = useCallback((campaignId: number) => {
+    markSwiped(campaignId);
+    setLikedIds(prev => new Set(prev).add(campaignId));
+    setCurrentIndex(p => p + 1);
+  }, []);
 
-  // Debug — kaldırılabilir
-  useEffect(() => {
-    console.log("[SwipeDeck]", { loading, total: campaigns.length, currentIndex, showDone, showCards });
-  }, [loading, campaigns.length, currentIndex, showDone, showCards]);
+  const showLoading = loading;
+  const showEmpty   = !loading && campaigns.length === 0;
+  const showDone    = !loading && campaigns.length > 0 && currentIndex >= campaigns.length;
+  const showCards   = !loading && campaigns.length > 0 && currentIndex < campaigns.length;
+
+  const stateStyle: React.CSSProperties = {
+    display: "flex", flexDirection: "column",
+    alignItems: "center", justifyContent: "center",
+    textAlign: "center", padding: "0 1.5rem",
+    height: DECK_H,
+  };
 
   return (
-    <div style={{ minHeight: 620, position: "relative" }}>
-      {/* ── Loading state ── */}
+    <div>
+      {/* Loading */}
       {showLoading && (
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          height: 620,
-        }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-            <motion.div
-              style={{
-                width: 64, height: 64, borderRadius: "50%",
-                border: "3px solid var(--border)",
-                borderTopColor: "var(--accent)",
-              }}
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-            />
-            <motion.p
-              style={{ color: "var(--text-secondary)", fontSize: "0.875rem", fontFamily: "var(--font-mono)" }}
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              {t("deck.loading")}
-            </motion.p>
-          </div>
+        <div style={stateStyle}>
+          <motion.div
+            style={{ width: 52, height: 52, borderRadius: "50%", border: "3px solid var(--border)", borderTopColor: "var(--accent)", marginBottom: "1rem" }}
+            animate={{ rotate: 360 }}
+            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          />
+          <motion.p
+            style={{ color: "var(--text-secondary)", fontSize: "0.85rem", fontFamily: "var(--font-mono)" }}
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            {t("deck.loading")}
+          </motion.p>
         </div>
       )}
 
-      {/* ── Empty state ── */}
+      {/* Empty */}
       {showEmpty && (
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center",
-          justifyContent: "center", textAlign: "center", padding: "0 1.5rem", height: 620,
-        }}>
-          <div style={{ fontSize: "4.5rem", marginBottom: "1.5rem", color: "var(--accent)" }}>✦</div>
-          <h2 style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
+        <div style={stateStyle}>
+          <div style={{ fontSize: "3.5rem", marginBottom: "1rem", color: "var(--accent)" }}>✦</div>
+          <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.5rem" }}>
             {t("deck.empty")}
           </h2>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "1.5rem" }}>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
             {t("deck.emptyDesc")}
           </p>
           <a href="/create" className="btn-primary">{t("deck.createCta")}</a>
         </div>
       )}
 
-      {/* ── All swiped — done state ── */}
+      {/* Done — all swiped */}
       {showDone && (
-        <div style={{
-          display: "flex", flexDirection: "column", alignItems: "center",
-          justifyContent: "center", textAlign: "center", padding: "0 1.5rem", height: 620,
-        }}>
-          <div style={{ fontSize: "4.5rem", marginBottom: "1.5rem", color: "var(--accent)" }}>✓</div>
-          <h2 style={{
-            fontSize: "1.5rem", fontWeight: 700,
-            color: "var(--text-primary)", marginBottom: "0.5rem",
-            fontFamily: "var(--font-display)",
-          }}>
+        <div style={stateStyle}>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            style={{ width: 72, height: 72, borderRadius: "50%", background: "rgba(16,185,129,0.15)", border: "2px solid rgba(16,185,129,0.4)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2rem", marginBottom: "1.25rem" }}
+          >
+            ✓
+          </motion.div>
+          <h2 style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--text-primary)", marginBottom: "0.4rem", fontFamily: "var(--font-display)" }}>
             {t("deck.done")}
           </h2>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "1.5rem", lineHeight: 1.6 }}>
+          <p style={{ color: "var(--text-secondary)", marginBottom: "1.5rem", lineHeight: 1.6, fontSize: "0.9rem", maxWidth: 260 }}>
             {t("deck.doneDesc")}
           </p>
           <button
-            onClick={() => { setCurrentIndex(0); loadCampaigns(); }}
+            onClick={() => { clearSwiped(); setCurrentIndex(0); loadCampaigns(); }}
             className="btn-primary"
           >
             {t("deck.restart")}
@@ -170,22 +191,31 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
         </div>
       )}
 
-      {/* ── Active cards ── */}
+      {/* Active swipe deck */}
       {showCards && (
-        <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", height: 680 }}>
+        <div style={{
+          position: "relative",
+          width: "min(380px, 92vw)",
+          height: DECK_H,
+          margin: "0 auto",
+          overflow: "visible",
+        }}>
+          {/* Stacked background cards */}
           <AnimatePresence>
             {campaigns.slice(currentIndex + 1, currentIndex + 3).map((c, i) => (
               <motion.div
                 key={`bg-${c.id}`}
-                className="absolute rounded-3xl bg-[#111118] border border-white/10"
-                initial={{ scale: 1 - (i + 1) * 0.05, y: (i + 1) * 14, opacity: 0 }}
-                animate={{
-                  scale: 1 - (i + 1) * 0.05,
-                  y: (i + 1) * 14,
-                  opacity: 0.6 - i * 0.2,
+                style={{
+                  position: "absolute",
+                  top: 0, left: 0, right: 0, bottom: 0,
+                  zIndex: -(i + 1),
+                  borderRadius: 24,
+                  background: "#111118",
+                  border: "1px solid rgba(255,255,255,0.08)",
                 }}
+                initial={{ scale: 1 - (i + 1) * 0.05, y: (i + 1) * 14, opacity: 0 }}
+                animate={{ scale: 1 - (i + 1) * 0.05, y: (i + 1) * 14, opacity: 0.5 - i * 0.2 }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                style={{ width: 360, height: 560, zIndex: -(i + 1) }}
               />
             ))}
           </AnimatePresence>

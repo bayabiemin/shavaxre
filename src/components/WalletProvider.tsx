@@ -106,6 +106,32 @@ function MobileWalletModal({ onClose }: { onClose: () => void }) {
     );
 }
 
+// localStorage keys
+const CONNECTED_KEY = "shavaxre_wallet_connected"; // stored address (lowercase)
+const PROVIDER_KEY  = "shavaxre_wallet_provider";  // "metamask" | "core" | "generic"
+
+/**
+ * When MetaMask + Core are both installed, Core often hijacks window.ethereum.
+ * EIP-5749 / Core's multi-wallet support exposes window.ethereum.providers[]
+ * which contains each wallet as a separate object.
+ * We use this to find the correct provider by address on reconnect.
+ */
+function getAllProviders(): any[] {
+    if (typeof window === "undefined") return [];
+    const eth = (window as any).ethereum;
+    if (!eth) return [];
+    if (eth.providers && Array.isArray(eth.providers)) return [...eth.providers];
+    return [eth];
+}
+
+function getProviderType(p: any): string {
+    if (!p) return "generic";
+    // Core sets isAvalanche / isCoreWallet; MetaMask-only sets only isMetaMask
+    if (p.isAvalanche || p.isCoreWallet || p.isCore) return "core";
+    if (p.isMetaMask) return "metamask";
+    return "generic";
+}
+
 export function WalletProvider({ children }: { children: React.ReactNode }) {
     const [address, setAddress] = useState<string | null>(null);
     const [signer, setSigner] = useState<any>(null);
@@ -127,9 +153,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
             const bp = new BrowserProvider(window.ethereum);
             await bp.send("eth_requestAccounts", []);
             const s = await bp.getSigner();
-            setAddress(await s.getAddress());
+            const addr = await s.getAddress();
+            setAddress(addr);
             setSigner(s);
             setProvider(bp);
+            // Save address + which wallet type was active at connection time
+            localStorage.setItem(CONNECTED_KEY, addr.toLowerCase());
+            localStorage.setItem(PROVIDER_KEY, getProviderType(window.ethereum));
         } catch (err) {
             console.error("Wallet connection failed:", err);
             if (err instanceof Error && !err.message.includes("user rejected")) {
@@ -141,6 +171,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const disconnect = useCallback(() => {
+        localStorage.removeItem(CONNECTED_KEY);
+        localStorage.removeItem(PROVIDER_KEY);
         setAddress(null);
         setSigner(null);
         setProvider(null);
@@ -150,18 +182,40 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (typeof window === "undefined" || !(window as any).ethereum) return;
 
+        const savedAddr = localStorage.getItem(CONNECTED_KEY);
+        const savedType = localStorage.getItem(PROVIDER_KEY) ?? "generic";
+        if (!savedAddr) return; // User explicitly disconnected — respect that
+
         const reconnect = async () => {
             try {
-                const accounts: string[] = await (window as any).ethereum.request({
-                    method: "eth_accounts",
-                });
-                if (accounts.length > 0) {
-                    const bp = new BrowserProvider((window as any).ethereum);
-                    const s = await bp.getSigner();
-                    setAddress(accounts[0]);
-                    setSigner(s);
-                    setProvider(bp);
+                const allProviders = getAllProviders();
+
+                // Try the saved wallet type first, then others as fallback
+                const ordered = [
+                    ...allProviders.filter(p => getProviderType(p) === savedType),
+                    ...allProviders.filter(p => getProviderType(p) !== savedType),
+                ];
+
+                for (const p of ordered) {
+                    try {
+                        const accounts: string[] = await p.request({ method: "eth_accounts" });
+                        if (
+                            accounts.length > 0 &&
+                            accounts[0].toLowerCase() === savedAddr
+                        ) {
+                            // Found the correct provider — reconnect with it
+                            const bp = new BrowserProvider(p);
+                            const s = await bp.getSigner();
+                            setAddress(accounts[0]);
+                            setSigner(s);
+                            setProvider(bp);
+                            return;
+                        }
+                    } catch { /* provider errored, try next */ }
                 }
+
+                // No provider has the saved address (wallet locked / removed)
+                // Don't auto-connect with a wrong wallet — stay disconnected
             } catch (err) {
                 console.warn("Auto-reconnect failed:", err);
             }
@@ -170,15 +224,26 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         reconnect();
     }, []);
 
-    // Listen for account changes
+    // Listen for account changes from the wallet extension
     useEffect(() => {
         if (typeof window !== "undefined" && (window as any).ethereum) {
             const eth = (window as any).ethereum;
-            const handleAccountsChanged = (accounts: string[]) => {
+            const handleAccountsChanged = async (accounts: string[]) => {
                 if (accounts.length === 0) {
                     disconnect();
                 } else {
-                    setAddress(accounts[0]);
+                    try {
+                        const bp = new BrowserProvider(eth);
+                        const s = await bp.getSigner();
+                        const addr = await s.getAddress();
+                        setAddress(addr);
+                        setSigner(s);
+                        setProvider(bp);
+                        localStorage.setItem(CONNECTED_KEY, addr.toLowerCase());
+                        localStorage.setItem(PROVIDER_KEY, getProviderType(eth));
+                    } catch {
+                        setAddress(accounts[0]);
+                    }
                 }
             };
             eth.on("accountsChanged", handleAccountsChanged);

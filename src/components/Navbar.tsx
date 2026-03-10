@@ -71,16 +71,13 @@ export default function Navbar() {
 
                 <div className="navbar-links">
                     {navLinks.map((link) => (
-                        <Link key={link.href} href={link.href} className="nav-link" style={{ position: "relative" }}>
-                            <motion.span
-                                whileHover={{ color: isDark ? "#fff" : "#000" }}
-                                transition={{ duration: 0.15 }}
-                                style={{
-                                    color: pathname === link.href ? "var(--accent)" : undefined,
-                                }}
-                            >
-                                {link.label}
-                            </motion.span>
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className={`nav-link${pathname === link.href ? " nav-link--active" : ""}`}
+                            style={{ position: "relative" }}
+                        >
+                            <span>{link.label}</span>
                             {pathname === link.href && (
                                 <motion.div
                                     layoutId="nav-indicator"
