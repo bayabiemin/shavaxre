@@ -177,7 +177,7 @@ export default function SwipeDeck({ walletConnected, walletAddress }: SwipeDeckP
             {campaigns.slice(currentIndex + 1, currentIndex + 3).map((c, i) => (
               <motion.div
                 key={`bg-${c.id}`}
-                className="absolute rounded-3xl bg-[#0a0a0f] border border-white/5"
+                className="absolute rounded-3xl bg-[#111118] border border-white/10"
                 initial={{ scale: 1 - (i + 1) * 0.05, y: (i + 1) * 14, opacity: 0 }}
                 animate={{
                   scale: 1 - (i + 1) * 0.05,

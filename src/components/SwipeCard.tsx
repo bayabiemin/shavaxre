@@ -73,11 +73,11 @@ export default function SwipeCard({
     x,
     [-200, -50, 0, 50, 200],
     [
-      "0 0 80px rgba(239,68,68,0.3)",
-      "0 0 0px rgba(0,0,0,0)",
-      "0 4px 30px rgba(0,0,0,0.5)",
-      "0 0 0px rgba(0,0,0,0)",
-      "0 0 80px rgba(16,185,129,0.3)",
+      "0 0 80px rgba(239,68,68,0.5), 0 20px 60px rgba(0,0,0,0.8)",
+      "0 0 20px rgba(239,68,68,0.15), 0 20px 60px rgba(0,0,0,0.7)",
+      "0 20px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,255,255,0.08)",
+      "0 0 20px rgba(16,185,129,0.15), 0 20px 60px rgba(0,0,0,0.7)",
+      "0 0 80px rgba(16,185,129,0.5), 0 20px 60px rgba(0,0,0,0.8)",
     ]
   );
 
@@ -161,22 +161,29 @@ export default function SwipeCard({
                 scale: dragScale,
                 boxShadow: bgGlow,
                 width: 380,
-                height: 580,
-                maxWidth: "90vw",
+                height: 620,
+                maxWidth: "92vw",
               }}
               whileTap={{ cursor: "grabbing" }}
-              className="relative rounded-3xl overflow-hidden bg-[#0a0a0f] border border-white/10 cursor-grab active:cursor-grabbing select-none"
+              className="relative rounded-3xl overflow-hidden bg-[#111118] border border-white/20 cursor-grab active:cursor-grabbing select-none"
             >
               {/* Image section */}
-              <div className="relative overflow-hidden" style={{ height: "60%" }}>
-                <motion.img
-                  src={campaign.imageUrl || "/placeholder.jpg"}
-                  alt={campaign.title}
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                  layoutId={`campaign-img-${campaign.id}`}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent" />
+              <div className="relative overflow-hidden" style={{ height: "54%" }}>
+                {campaign.imageUrl ? (
+                  <motion.img
+                    src={campaign.imageUrl}
+                    alt={campaign.title}
+                    className="w-full h-full object-cover"
+                    draggable={false}
+                    layoutId={`campaign-img-${campaign.id}`}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center"
+                    style={{ background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" }}>
+                    <span style={{ fontSize: "4rem", opacity: 0.6 }}>🎓</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#111118] via-transparent to-transparent" />
 
                 {/* LIKE stamp */}
                 <motion.div
@@ -215,126 +222,85 @@ export default function SwipeCard({
                 )}
               </div>
 
-              {/* Content section */}
-              <div className="p-5 space-y-3">
-                <h3 className="text-xl font-bold text-white leading-tight">{campaign.title}</h3>
-                <p className="text-sm text-zinc-400 line-clamp-2">{campaign.description}</p>
+              {/* Content section — inside the card */}
+              <div className="p-4 flex flex-col" style={{ height: "46%" }}>
+                <h3 className="text-lg font-bold text-white leading-tight mb-1 line-clamp-1">{campaign.title}</h3>
+                <p className="text-xs text-zinc-400 line-clamp-2 mb-2">{campaign.description}</p>
 
                 {/* Progress bar */}
-                <div className="space-y-1">
+                <div className="space-y-1 mb-2">
                   <div className="flex justify-between text-xs text-zinc-500">
                     <span>{ethers.formatEther(campaign.totalRaised)} AVAX</span>
                     <span>{Math.min(progress, 100)}%</span>
                   </div>
-                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
                     <motion.div
                       className="h-full rounded-full"
-                      style={{
-                        background: "linear-gradient(90deg, #E84142, #ff6b6b, #E84142)",
-                        backgroundSize: "200% 100%",
-                      }}
+                      style={{ background: "linear-gradient(90deg, #E84142, #ff6b6b)" }}
                       initial={{ width: 0 }}
-                      animate={{
-                        width: `${Math.min(progress, 100)}%`,
-                        backgroundPosition: ["0% 0%", "100% 0%"],
-                      }}
-                      transition={{
-                        width: { duration: 1, ease: [0.16, 1, 0.3, 1] },
-                        backgroundPosition: { duration: 2, repeat: Infinity, ease: "linear" },
-                      }}
+                      animate={{ width: `${Math.min(progress, 100)}%` }}
+                      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                     />
                   </div>
                 </div>
 
-                {/* Social links */}
-                <div className="flex gap-2">
-                  {campaign.socialLinks.twitter && (
-                    <a href={campaign.socialLinks.twitter} target="_blank" rel="noopener noreferrer"
-                       onClick={(e) => e.stopPropagation()}
-                       className="px-3 py-1 bg-white/5 rounded-lg text-xs text-zinc-300 hover:bg-white/10 transition">
-                      Twitter
-                    </a>
-                  )}
-                  {campaign.socialLinks.instagram && (
-                    <a href={campaign.socialLinks.instagram} target="_blank" rel="noopener noreferrer"
-                       onClick={(e) => e.stopPropagation()}
-                       className="px-3 py-1 bg-white/5 rounded-lg text-xs text-zinc-300 hover:bg-white/10 transition">
-                      Insta
-                    </a>
-                  )}
+                {/* Stats row */}
+                <div className="flex gap-3 text-xs text-zinc-500 mb-1">
+                  <span>{campaign.likes.toString()} {t("card.likes")}</span>
+                  <span>{campaign.uniqueDonors.toString()} {t("card.donors")}</span>
                   {campaign.socialLinks.liveStream && (
-                    <motion.a
-                      href={campaign.socialLinks.liveStream} target="_blank" rel="noopener noreferrer"
-                      onClick={(e) => e.stopPropagation()}
-                      className="px-3 py-1 bg-red-900/40 rounded-lg text-xs text-red-300 hover:bg-red-900/60 transition"
-                      animate={{ opacity: [1, 0.6, 1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    >
-                      LIVE
-                    </motion.a>
+                    <motion.span
+                      className="text-red-400 font-semibold"
+                      animate={{ opacity: [1, 0.5, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >● LIVE</motion.span>
                   )}
                 </div>
 
-                {/* Stats */}
-                <div className="flex gap-4 text-xs text-zinc-500">
-                  <span>{campaign.likes.toString()} {t("card.likes")}</span>
-                  <span>{campaign.uniqueDonors.toString()} {t("card.donors")}</span>
+                {/* Action buttons — INSIDE the card */}
+                <div className="flex items-center justify-center gap-4 mt-auto pt-2">
+                  <motion.button
+                    onClick={() => { exitDirection.current = "left"; setExiting("left"); setTimeout(() => onSwipeLeft(campaign.id), 400); }}
+                    className="w-12 h-12 rounded-full bg-white/5 border border-white/15 flex items-center justify-center text-xl hover:bg-red-500/20 hover:border-red-500/50 transition-all"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.85 }}
+                  >
+                    ✕
+                  </motion.button>
+
+                  <motion.button
+                    onClick={() => setShowDonatePanel(true)}
+                    disabled={!walletConnected}
+                    className="w-16 h-16 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-sm font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ boxShadow: "0 0 28px rgba(232,65,66,0.45)" }}
+                    whileHover={{ scale: 1.12, boxShadow: "0 0 50px rgba(232,65,66,0.65)" } as never}
+                    whileTap={{ scale: 0.9 }}
+                    title={walletConnected ? "AVAX" : t("card.walletFirst")}
+                  >
+                    AVAX
+                  </motion.button>
+
+                  <motion.button
+                    onClick={() => {
+                      exitDirection.current = "right";
+                      setExiting("right");
+                      if (walletConnected && !alreadyLiked) like(campaign.id);
+                      setTimeout(() => onSwipeRight(campaign.id), 400);
+                    }}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center text-xl transition-all ${
+                      alreadyLiked
+                        ? "bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400"
+                        : "bg-white/5 border border-white/15 hover:bg-emerald-500/20 hover:border-emerald-500/50"
+                    }`}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.85 }}
+                    title={alreadyLiked ? t("card.alreadyLiked") : t("card.like")}
+                  >
+                    {alreadyLiked ? "✓" : "♥"}
+                  </motion.button>
                 </div>
               </div>
             </motion.div>
-
-            {/* Action buttons */}
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-5 z-20">
-              <motion.button
-                onClick={() => { exitDirection.current = "left"; setExiting("left"); setTimeout(() => onSwipeLeft(campaign.id), 400); }}
-                className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-2xl hover:bg-red-500/20 hover:border-red-500/50 transition-all"
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.85 }}
-              >
-                ✕
-              </motion.button>
-
-              <motion.button
-                onClick={() => setShowDonatePanel(true)}
-                disabled={!walletConnected}
-                className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center text-sm font-bold text-white shadow-[0_0_30px_rgba(239,68,68,0.4)] disabled:opacity-30 disabled:cursor-not-allowed"
-                whileHover={{
-                  scale: 1.15,
-                  boxShadow: "0 0 60px rgba(239,68,68,0.6)",
-                }}
-                whileTap={{ scale: 0.9 }}
-                animate={{
-                  boxShadow: [
-                    "0 0 30px rgba(239,68,68,0.3)",
-                    "0 0 50px rgba(239,68,68,0.5)",
-                    "0 0 30px rgba(239,68,68,0.3)",
-                  ],
-                }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                title={walletConnected ? "AVAX" : t("card.walletFirst")}
-              >
-                AVAX
-              </motion.button>
-
-              <motion.button
-                onClick={() => {
-                  exitDirection.current = "right";
-                  setExiting("right");
-                  if (walletConnected && !alreadyLiked) like(campaign.id);
-                  setTimeout(() => onSwipeRight(campaign.id), 400);
-                }}
-                className={`w-14 h-14 rounded-full flex items-center justify-center text-2xl transition-all ${
-                  alreadyLiked
-                    ? "bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-400"
-                    : "bg-white/5 border border-white/10 hover:bg-emerald-500/20 hover:border-emerald-500/50"
-                }`}
-                whileHover={{ scale: 1.15 }}
-                whileTap={{ scale: 0.85 }}
-                title={alreadyLiked ? t("card.alreadyLiked") : t("card.like")}
-              >
-                {alreadyLiked ? "✓" : "♥"}
-              </motion.button>
-            </div>
           </motion.div>
 
       {/* Donate Panel */}
