@@ -20,6 +20,19 @@
 
 ---
 
+## 🔴 Live Demo
+
+| Resource | Link |
+|----------|------|
+| **Live App** | [shavaxre.vercel.app](https://shavaxre.vercel.app) |
+| **Smart Contract** | [`0xc305D0d42...`](https://testnet.snowtrace.io/address/0xc305D0d42A11FF99E297575ba48985041513139c) |
+| **Network** | Avalanche Fuji Testnet (Chain ID: 43113) |
+| **Get Test AVAX** | [faucet.avax.network](https://faucet.avax.network/) |
+
+> To interact with the dApp, connect MetaMask or Core Wallet to **Avalanche Fuji Testnet** and get test AVAX from the faucet.
+
+---
+
 ## 🏔️ Built for Avalanche Build Games 2026
 
 **Sha(vax)re** is a decentralized crowdfunding platform that enables students to raise funds for their education goals with full on-chain transparency. Every donation goes directly from the donor's wallet to the student's wallet — **peer-to-peer, zero commission, fully verifiable on the blockchain.**
@@ -42,13 +55,14 @@ Traditional education funding systems are:
 
 Sha(vax)re eliminates all intermediaries by putting the entire funding lifecycle on-chain:
 
-| Feature                | Traditional               | Sha(vax)re                       |
-| ---------------------- | ------------------------- | -------------------------------- |
-| **Transparency**       | Trust the platform        | Verify on Snowtrace              |
-| **Commission**         | 5-15%                     | **0%**                           |
-| **Transfer Speed**     | Days to weeks             | **< 2 seconds**                  |
-| **Fund Flow**          | Platform → Bank → Student | **Donor → Student (P2P)**        |
-| **Corporate Matching** | Manual, opaque            | **Automated via smart contract** |
+| Feature                | Traditional               | Sha(vax)re                          |
+| ---------------------- | ------------------------- | ----------------------------------- |
+| **Transparency**       | Trust the platform        | Verify on Snowtrace                 |
+| **Commission**         | 5-15%                     | **0%**                              |
+| **Transfer Speed**     | Days to weeks             | **< 2 seconds**                     |
+| **Fund Flow**          | Platform → Bank → Student | **Donor → Student (P2P)**           |
+| **Accountability**     | Self-reported             | **On-chain proof + donor voting**   |
+| **Fraud Protection**   | Manual review             | **Stake/slash + community flagging**|
 
 ---
 
@@ -56,10 +70,12 @@ Sha(vax)re eliminates all intermediaries by putting the entire funding lifecycle
 
 - 🔗 **On-Chain Campaigns** — Every campaign is a struct stored on Avalanche C-Chain
 - 💸 **Zero-Fee Donations** — 100% of AVAX goes directly to the student
-- 🏢 **Corporate Matching** — Companies can fund matching pools that auto-match donations
-- 👛 **Multi-Wallet Connect** — MetaMask & Core Wallet with EIP-5749 multi-provider support; remembers your wallet across sessions without mixing providers
+- 🛡️ **Two-Phase Release** — 65% auto-released at goal, 35% requires donor voting after proof submission
+- 🗳️ **Donor Governance** — Donors vote on proof-of-use to unlock remaining funds (48h window, 30% quorum)
+- 🔒 **Stake & Slash** — Creators stake 0.1 AVAX per campaign; slashed if flagged as fraudulent
+- 👛 **Multi-Wallet Connect** — MetaMask & Core Wallet with EIP-5749 multi-provider support; remembers your wallet across sessions
 - 📊 **Live Progress** — Real-time funding progress tracked on-chain
-- 🎓 **Student Autonomy** — Students claim funds on their own terms
+- 🚫 **Anti-Spam** — Max 3 active campaigns per creator, blacklist system, on-chain reporting
 - 🃏 **Tinder-Style Swipe Deck** — Discover and fund campaigns by swiping; previously swiped cards never re-appear (localStorage persistence)
 - 🌗 **Dark / Light Theme** — Full design system with Avalanche red accent palette
 - 🌐 **TR / EN Language** — Full bilingual support (Turkish & English)
@@ -123,38 +139,57 @@ npx hardhat verify --network fuji <DEPLOYED_ADDRESS>
 
 ## 📜 Smart Contract
 
-**Contract:** `Shavaxre.sol`
+**Contract:** [`Shavaxre.sol`](contracts/Shavaxre.sol)
 **Network:** Avalanche Fuji Testnet (Chain ID: 43113)
 **Language:** Solidity 0.8.19
-**Deployed:** `0x6E1EB557c63F46880Fc3e7A4C073b9eb4360e2A0`
+**Deployed:** [`0xc305D0d42A11FF99E297575ba48985041513139c`](https://testnet.snowtrace.io/address/0xc305D0d42A11FF99E297575ba48985041513139c)
+**Live Demo:** [shavaxre.vercel.app](https://shavaxre.vercel.app)
 
 ### Core Functions
 
-| Function             | Description                             | Access                |
-| -------------------- | --------------------------------------- | --------------------- |
-| `createCampaign()`   | Student opens a new funding campaign    | Anyone                |
-| `donate()`           | Send AVAX to an active campaign         | Anyone                |
-| `likeCampaign()`     | Like/endorse a campaign (on-chain)      | Anyone                |
-| `claimFunds()`       | Student withdraws collected funds       | Campaign creator only |
-| `fundMatchingPool()` | Corporate sponsor funds a matching pool | Anyone                |
-| `matchDonation()`    | Trigger auto-match for a donation       | Anyone                |
+| Function             | Description                                              | Access          |
+| -------------------- | -------------------------------------------------------- | --------------- |
+| `createCampaign()`   | Student opens a campaign (requires 0.1 AVAX stake)       | Anyone          |
+| `donate()`           | Send AVAX directly to an active campaign                 | Anyone          |
+| `likeCampaign()`     | Like/endorse a campaign on-chain (1 per wallet)          | Anyone          |
+| `reportCampaign()`   | Report a suspicious campaign with a reason               | Anyone          |
+| `submitProof()`      | Student submits proof-of-use after Phase 1 release       | Creator only    |
+| `vote()`             | Donors vote to approve/reject proof for Phase 2 release  | Donors only     |
+| `finalizeVoting()`   | Finalize voting and release Phase 2 or slash funds       | Anyone          |
+| `claimRefund()`      | Donors reclaim funds from flagged campaigns              | Donors only     |
+| `flagCampaign()`     | Admin flags fraudulent campaign, slashes stake            | Owner only      |
+| `blacklistAddress()` | Ban an address from creating campaigns                   | Owner only      |
+
+### Two-Phase Release Mechanism
+
+Sha(vax)re uses a **trust-but-verify** model to protect donors:
+
+1. **Phase 1 (65%)** — Auto-released when funding goal is reached
+2. **Proof Submission** — Student uploads proof of how funds were used
+3. **Donor Voting** — Donors vote on whether proof is legitimate (48h window, 30% quorum)
+4. **Phase 2 (35%)** — Released only if donors approve. Otherwise, remaining funds + stake go to treasury
 
 ### Security
 
 - **CEI Pattern** — All state mutations happen before external calls
-- **Reentrancy Protection** — `nonReentrant` modifier on all fund-transfer functions
-- **Access Control** — `onlyCreator` guard on `claimFunds` and campaign management
-- **Input Validation** — `msg.value` checks on every payable function
+- **Reentrancy Protection** — Custom `nonReentrant` modifier on all fund-transfer functions
+- **Access Control** — `onlyOwner` for admin, `onlyCreator` for campaign management
+- **Stake Requirement** — 0.1 AVAX stake per campaign, slashed if flagged
+- **Anti-Spam** — Max 3 active campaigns per creator, blacklist system
+- **Duplicate Prevention** — One like per wallet per campaign via `hasLiked` mapping
+- **Input Validation** — `msg.value` and `goalAmount` checks on every payable function
 
 ### Architecture
 
 ```
-Donor ──── donate() ────→ Smart Contract ──── claimFunds() ────→ Student
-                              ↑
-Corporate ── fundMatchingPool() ── matchDonation() ──┘
+                    ┌─── Phase 1 (65%) ──→ Student
+Donor → donate() → Contract
+                    └─── Phase 2 (35%) ──→ submitProof() → vote() → finalizeVoting()
+                                                                        ├─ Approved → Student + stake refund
+                                                                        └─ Rejected → Treasury (funds + stake)
 ```
 
-**Zero commission.** No admin fees, no platform cut. The contract simply holds AVAX until the student claims it.
+**Zero commission.** No admin fees, no platform cut. Funds flow directly peer-to-peer.
 
 ---
 
@@ -198,11 +233,14 @@ shavaxre/
 
 - [x] **Week 1** — Idea pitch & project architecture
 - [x] **Week 2-3** — MVP: Smart contract + full frontend on Fuji Testnet
-  - [x] Swipe-to-fund discovery deck
-  - [x] Inline donation panel with error handling
+  - [x] Two-phase release smart contract with stake/slash
+  - [x] Donor voting governance (proof submission, 48h window)
+  - [x] Swipe-to-fund discovery deck with localStorage persistence
+  - [x] Custom donation amounts with high-value confirmation
   - [x] Multi-wallet support (MetaMask + Core, EIP-5749)
   - [x] Dark/light theme + TR/EN bilingual
-  - [x] Mobile-first responsive layout
+  - [x] Mobile-first responsive layout with wallet deep links
+  - [x] Anti-spam: blacklist, max campaigns per creator, on-chain reporting
 - [ ] **Week 4-5** — GTM strategy, university blockchain club partnerships
 - [ ] **Week 6** — Final presentation & live demo
 
