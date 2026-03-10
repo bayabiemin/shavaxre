@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { BrowserProvider } from "ethers";
 import { ensureFujiNetwork } from "@/lib/contract";
 
@@ -138,8 +138,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const [provider, setProvider] = useState<any>(null);
     const [isConnecting, setIsConnecting] = useState(false);
     const [showMobileModal, setShowMobileModal] = useState(false);
+    // Tracks whether the user intentionally disconnected — prevents accountsChanged
+    // from a foreign wallet (e.g. Core) silently re-connecting after manual disconnect.
+    const manuallyDisconnected = useRef(false);
 
     const connect = useCallback(async () => {
+        manuallyDisconnected.current = false;
         try {
             setIsConnecting(true);
             if (!window.ethereum) {
@@ -171,6 +175,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const disconnect = useCallback(() => {
+        manuallyDisconnected.current = true;
         localStorage.removeItem(CONNECTED_KEY);
         localStorage.removeItem(PROVIDER_KEY);
         setAddress(null);
@@ -190,20 +195,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
             try {
                 const allProviders = getAllProviders();
 
-                // Try the saved wallet type first, then others as fallback
-                const ordered = [
-                    ...allProviders.filter(p => getProviderType(p) === savedType),
-                    ...allProviders.filter(p => getProviderType(p) !== savedType),
-                ];
+                // STRICT: only try providers that match the saved wallet type.
+                // Never fall back to a different wallet — if the user connected with
+                // MetaMask we must not silently reconnect them with Core (or vice versa),
+                // even if both wallets hold the same address.
+                const matching = allProviders.filter(p => getProviderType(p) === savedType);
 
-                for (const p of ordered) {
+                for (const p of matching) {
                     try {
                         const accounts: string[] = await p.request({ method: "eth_accounts" });
                         if (
                             accounts.length > 0 &&
                             accounts[0].toLowerCase() === savedAddr
                         ) {
-                            // Found the correct provider — reconnect with it
                             const bp = new BrowserProvider(p);
                             const s = await bp.getSigner();
                             setAddress(accounts[0]);
@@ -214,8 +218,10 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
                     } catch { /* provider errored, try next */ }
                 }
 
-                // No provider has the saved address (wallet locked / removed)
-                // Don't auto-connect with a wrong wallet — stay disconnected
+                // Correct wallet is locked or unavailable — clear saved state so
+                // the user gets a clean "Connect Wallet" prompt.
+                localStorage.removeItem(CONNECTED_KEY);
+                localStorage.removeItem(PROVIDER_KEY);
             } catch (err) {
                 console.warn("Auto-reconnect failed:", err);
             }
@@ -232,6 +238,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
                 if (accounts.length === 0) {
                     disconnect();
                 } else {
+                    // If the user manually disconnected, ignore events fired by other
+                    // wallets (e.g. Core emitting accountsChanged after user hit ✕).
+                    if (manuallyDisconnected.current) return;
+                    // Also ignore if we are not currently connected — don't let a
+                    // background wallet inject itself unsolicited.
+                    if (!localStorage.getItem(CONNECTED_KEY)) return;
                     try {
                         const bp = new BrowserProvider(eth);
                         const s = await bp.getSigner();
